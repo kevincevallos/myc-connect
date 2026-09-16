@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MYC Connect</title>
+  <style>
+    :root {
+      --blue: #2B557E;
+      --brown: #815747;
+      --cream: #F3EADD;
+      --green: #0E4F43;
+      --red: #C62700;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f7f8fa;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--text); }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    aside { background: #fff; border-right: 1px solid var(--border); padding: 26px 18px; }
+    .brand { font-weight: 800; color: var(--blue); font-size: 22px; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 30px; }
+    nav a { display: block; text-decoration: none; color: var(--text); padding: 11px 12px; border-radius: 9px; margin: 4px 0; }
+    nav a.active, nav a:hover { background: var(--cream); color: var(--blue); font-weight: 700; }
+    main { padding: 28px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 28px; }
+    .top small { color: var(--muted); }
+    button { border: 0; border-radius: 9px; padding: 11px 15px; cursor: pointer; font-weight: 700; }
+    .primary { background: var(--blue); color: white; }
+    .secondary { background: white; border: 1px solid var(--border); color: var(--text); }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .card { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .card .label { color: var(--muted); font-size: 13px; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 8px; color: var(--blue); }
+    .panel { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .panel h2 { font-size: 18px; margin: 0 0 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .pill { display: inline-block; padding: 5px 8px; border-radius: 999px; background: var(--cream); color: var(--brown); font-size: 12px; font-weight: 700; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.38); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal.open { display: flex; }
+    .modal-box { background: white; width: min(760px, 100%); max-height: 92vh; overflow: auto; border-radius: 16px; padding: 22px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--muted); }
+    input, select, textarea { width: 100%; padding: 10px 11px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    textarea { min-height: 90px; resize: vertical; }
+    .full { grid-column: 1 / -1; }
+    .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+    .notice { margin: 12px 0 0; font-size: 13px; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { display: none; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">MYC Connect</div>
+    <div class="subtitle">Business Matching CRM</div>
+    <nav>
+      <a class="active" href="#">Dashboard</a>
+      <a href="#">Organizaciones</a>
+      <a href="#">Contactos</a>
+      <a href="#">Pipeline</a>
+      <a href="#">Matches</a>
+      <a href="#">Seguimientos</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div>
+        <h1>Dashboard</h1>
+        <small>Resumen comercial de Mishki Yaku Collective</small>
+      </div>
+      <button class="primary" id="openModal">+ Registrar organización</button>
+    </div>
+
+    <section class="cards">
+      <div class="card"><div class="label">Total organizaciones</div><div class="value" id="totalOrganizations">0</div></div>
+      <div class="card"><div class="label">Nuevos leads este mes</div><div class="value" id="newLeadsThisMonth">0</div></div>
+      <div class="card"><div class="label">Oportunidades activas</div><div class="value" id="activeOpportunities">0</div></div>
+      <div class="card"><div class="label">Matches abiertos</div><div class="value" id="openMatches">0</div></div>
+      <div class="card"><div class="label">Ecuador → Europa</div><div class="value" id="ecuadorToEurope">0</div></div>
+      <div class="card"><div class="label">Europa → Ecuador</div><div class="value" id="europeToEcuador">0</div></div>
+      <div class="card"><div class="label">Follow-ups vencidos</div><div class="value" id="followUpsDue">0</div></div>
+    </section>
+
+    <section class="panel">
+      <h2>Organizaciones recientes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Organización</th>
+            <th>País</th>
+            <th>Sector</th>
+            <th>Dirección</th>
+            <th>Pipeline</th>
+          </tr>
+        </thead>
+        <tbody id="organizationsTable">
+          <tr><td colspan="5">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2 style="margin-top:0">Registrar organización</h2>
+    <form id="organizationForm">
+      <div class="grid">
+        <div>
+          <label>Nombre *</label>
+          <input name="name" required />
+        </div>
+        <div>
+          <label>Tipo de organización *</label>
+          <select name="organizationType" required>
+            <option value="Company">Empresa</option>
+            <option value="Institution">Institución</option>
+            <option value="University">Universidad</option>
+            <option value="NGO">ONG</option>
+            <option value="Association">Asociación</option>
+            <option value="Public body">Entidad pública</option>
+          </select>
+        </div>
+        <div>
+          <label>País *</label>
+          <input name="country" value="Ecuador" required />
+        </div>
+        <div>
+          <label>Ciudad / Región</label>
+          <input name="cityRegion" />
+        </div>
+        <div>
+          <label>Dirección *</label>
+          <select name="direction" required>
+            <option value="ECUADOR_TO_EUROPE">Ecuador → Europa</option>
+            <option value="EUROPE_TO_ECUADOR">Europa → Ecuador</option>
+            <option value="SCIENCE_INNOVATION">Science & Innovation</option>
+          </select>
+        </div>
+        <div>
+          <label>Sector *</label>
+          <input name="sector" placeholder="Ej. Flores, cacao, software..." required />
+        </div>
+        <div>
+          <label>Subsector</label>
+          <input name="subsector" />
+        </div>
+        <div>
+          <label>Potencial estratégico</label>
+          <select name="strategicPotential">
+            <option value="">Sin definir</option>
+            <option value="HIGH">Alto</option>
+            <option value="MEDIUM">Medio</option>
+            <option value="LOW">Bajo</option>
+          </select>
+        </div>
+        <div>
+          <label>Fuente del lead</label>
+          <input name="leadSource" placeholder="Instagram, LinkedIn, evento..." />
+        </div>
+        <div>
+          <label>Estado comercial</label>
+          <select name="pipelineStage">
+            <option value="IDENTIFIED">Identified</option>
+            <option value="CONTACTED">Contacted</option>
+            <option value="RESPONDED">Responded</option>
+            <option value="MEETING">Meeting</option>
+            <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option>
+            <option value="PROPOSAL">Proposal</option>
+            <option value="NEGOTIATION">Negotiation</option>
+            <option value="CLIENT">Client</option>
+          </select>
+        </div>
+        <div class="full">
+          <label>Qué ofrece</label>
+          <textarea name="offerSummary"></textarea>
+        </div>
+        <div class="full">
+          <label>Necesidades (separadas por coma)</label>
+          <input name="needs" placeholder="Buyer, Distributor, Representation" />
+        </div>
+        <div class="full">
+          <label>Mercados objetivo (separados por coma)</label>
+          <input name="targetMarkets" placeholder="Germany, Netherlands, Spain" />
+        </div>
+        <div>
+          <label>Sitio web</label>
+          <input name="website" />
+        </div>
+        <div>
+          <label>LinkedIn</label>
+          <input name="linkedin" />
+        </div>
+        <div>
+          <label>Instagram</label>
+          <input name="instagram" />
+        </div>
+        <div>
+          <label>Próxima acción</label>
+          <input name="nextAction" />
+        </div>
+        <div>
+          <label>Fecha próxima acción</label>
+          <input type="date" name="nextActionDate" />
+        </div>
+      </div>
+      <div id="formNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar organización</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById("modal");
+  document.getElementById("openModal").onclick = () => modal.classList.add("open");
+  document.getElementById("closeModal").onclick = () => modal.classList.remove("open");
+
+  async function loadDashboard() {
+    const res = await fetch("/api/dashboard");
+    const data = await res.json();
+    for (const [key, value] of Object.entries(data)) {
+      const el = document.getElementById(key);
+      if (el) el.textContent = value;
+    }
+  }
+
+  function directionLabel(value) {
+    if (value === "ECUADOR_TO_EUROPE") return "Ecuador → Europa";
+    if (value === "EUROPE_TO_ECUADOR") return "Europa → Ecuador";
+    return "Science & Innovation";
+  }
+
+  async function loadOrganizations() {
+    const res = await fetch("/api/organizations");
+    const items = await res.json();
+    const tbody = document.getElementById("organizationsTable");
+
+    if (!Array.isArray(items) || items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">Todavía no hay organizaciones registradas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td>${item.country}</td>
+        <td>${item.sector}</td>
+        <td>${directionLabel(item.direction)}</td>
+        <td><span class="pill">${item.pipelineStage.replaceAll("_", " ")}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  document.getElementById("organizationForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const payload = Object.fromEntries(form.entries());
+
+    payload.needs = String(payload.needs || "")
+      .split(",").map(x => x.trim()).filter(Boolean);
+    payload.targetMarkets = String(payload.targetMarkets || "")
+      .split(",").map(x => x.trim()).filter(Boolean);
+    payload.currentMarkets = [];
+
+    const notice = document.getElementById("formNotice");
+    notice.textContent = "Guardando...";
+
+    const res = await fetch("/api/organizations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      notice.textContent = data.error || "Ocurrió un error.";
+      return;
+    }
+
+    notice.textContent = "Organización registrada correctamente.";
+    e.target.reset();
+    setTimeout(() => {
+      modal.classList.remove("open");
+      notice.textContent = "";
+    }, 500);
+
+    await Promise.all([loadDashboard(), loadOrganizations()]);
+  });
+
+  Promise.all([loadDashboard(), loadOrganizations()]).catch(err => {
+    console.error(err);
+    document.getElementById("organizationsTable").innerHTML =
+      '<tr><td colspan="5">No se pudo conectar con la API.</td></tr>';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Direction {
+  ECUADOR_TO_EUROPE
+  EUROPE_TO_ECUADOR
+  SCIENCE_INNOVATION
+}
+
+enum StrategicPotential {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum PipelineStage {
+  IDENTIFIED
+  CONTACTED
+  RESPONDED
+  MEETING
+  QUALIFIED_OPPORTUNITY
+  PROPOSAL
+  NEGOTIATION
+  CLIENT
+  CLOSED
+  NOT_INTERESTED
+  NOT_QUALIFIED
+  ON_HOLD
+}
+
+enum MatchStatus {
+  POTENTIAL
+  CONTACT_PLANNED
+  INTRODUCED
+  MEETING
+  ACTIVE_OPPORTUNITY
+  CLOSED
+}
+
+enum InteractionType {
+  EMAIL
+  CALL
+  LINKEDIN
+  INSTAGRAM
+  WHATSAPP
+  MEETING
+  EVENT
+  OTHER
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("TEAM")
+  organizations Organization[] @relation("OrganizationOwner")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Organization {
+  id                     String              @id @default(cuid())
+  name                   String
+  organizationType       String
+  country                String
+  cityRegion             String?
+  website                String?
+  linkedin               String?
+  instagram              String?
+  logoUrl                String?
+  direction              Direction
+  sector                 String
+  subsector              String?
+  organizationSize       String?
+  offerSummary           String?
+  description            String?
+  certifications         String?
+  needs                  String[]
+  currentMarkets         String[]
+  targetMarkets          String[]
+  priorInternationalExp  String?
+  strategicPotential     StrategicPotential?
+  fitNotes               String?
+  leadSource             String?
+  pipelineStage          PipelineStage       @default(IDENTIFIED)
+  lastInteractionAt      DateTime?
+  nextAction             String?
+  nextActionDate         DateTime?
+  ownerId                String?
+  owner                  User?               @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  contacts               Contact[]
+  interactions           Interaction[]
+  opportunities          Opportunity[]
+  tasks                  Task[]
+  matchesAsA             Match[]             @relation("MatchOrganizationA")
+  matchesAsB             Match[]             @relation("MatchOrganizationB")
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@unique([name, country])
+  @@index([country])
+  @@index([direction])
+  @@index([sector])
+  @@index([pipelineStage])
+}
+
+model Contact {
+  id                String       @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  firstName         String
+  lastName          String
+  jobTitle          String?
+  email             String?
+  phoneWhatsapp     String?
+  linkedin          String?
+  preferredLanguage String?
+  notes             String?
+  isPrimary         Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model Interaction {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  date           DateTime        @default(now())
+  type           InteractionType
+  note           String
+  responsible    String?
+  attachmentUrl  String?
+  nextAction     String?
+  deadline       DateTime?
+  createdAt      DateTime        @default(now())
+}
+
+model Opportunity {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  stage          PipelineStage  @default(IDENTIFIED)
+  nextAction     String?
+  nextActionDate DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Match {
+  id              String       @id @default(cuid())
+  organizationAId String
+  organizationBId String
+  organizationA   Organization @relation("MatchOrganizationA", fields: [organizationAId], references: [id], onDelete: Cascade)
+  organizationB   Organization @relation("MatchOrganizationB", fields: [organizationBId], references: [id], onDelete: Cascade)
+  reason          String
+  needOffer       String?
+  status          MatchStatus  @default(POTENTIAL)
+  mycRole         String?
+  nextAction      String?
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([organizationAId, organizationBId])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  ownerName      String?
+  dueDate        DateTime?
+  completed      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
