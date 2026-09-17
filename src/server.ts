@@ -382,6 +382,112 @@ app.delete("/api/contacts/:id", async (req, res) => {
 });
 
 
+
+app.post("/api/organizations/:organizationId/interactions", async (req, res) => {
+  try {
+    const organization = await prisma.organization.findUnique({ where: { id: req.params.organizationId } });
+    if (!organization) return res.status(404).json({ error: "Organización no encontrada." });
+
+    const { date, type, note, responsible, attachmentUrl, nextAction, deadline } = req.body;
+    if (!type || !note) return res.status(400).json({ error: "Tipo y resultado/nota son obligatorios." });
+
+    const interactionDate = date ? new Date(date) : new Date();
+    const interaction = await prisma.interaction.create({
+      data: {
+        organizationId: req.params.organizationId,
+        date: interactionDate,
+        type,
+        note,
+        responsible: responsible || null,
+        attachmentUrl: attachmentUrl || null,
+        nextAction: nextAction || null,
+        deadline: deadline ? new Date(deadline) : null
+      }
+    });
+
+    await prisma.organization.update({
+      where: { id: req.params.organizationId },
+      data: {
+        lastInteractionAt: interactionDate,
+        ...(nextAction ? { nextAction } : {}),
+        ...(deadline ? { nextActionDate: new Date(deadline) } : {})
+      }
+    });
+
+    res.status(201).json(interaction);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo registrar la interacción." });
+  }
+});
+
+app.put("/api/interactions/:id", async (req, res) => {
+  try {
+    const existing = await prisma.interaction.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Interacción no encontrada." });
+
+    const { date, type, note, responsible, attachmentUrl, nextAction, deadline } = req.body;
+    if (!type || !note) return res.status(400).json({ error: "Tipo y resultado/nota son obligatorios." });
+
+    const interactionDate = date ? new Date(date) : existing.date;
+    const updated = await prisma.interaction.update({
+      where: { id: req.params.id },
+      data: {
+        date: interactionDate,
+        type,
+        note,
+        responsible: responsible || null,
+        attachmentUrl: attachmentUrl || null,
+        nextAction: nextAction || null,
+        deadline: deadline ? new Date(deadline) : null
+      }
+    });
+
+    const latest = await prisma.interaction.findFirst({
+      where: { organizationId: existing.organizationId },
+      orderBy: { date: "desc" }
+    });
+
+    await prisma.organization.update({
+      where: { id: existing.organizationId },
+      data: {
+        lastInteractionAt: latest?.date || null,
+        ...(nextAction ? { nextAction } : {}),
+        ...(deadline ? { nextActionDate: new Date(deadline) } : {})
+      }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo actualizar la interacción." });
+  }
+});
+
+app.delete("/api/interactions/:id", async (req, res) => {
+  try {
+    const existing = await prisma.interaction.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Interacción no encontrada." });
+
+    await prisma.interaction.delete({ where: { id: req.params.id } });
+
+    const latest = await prisma.interaction.findFirst({
+      where: { organizationId: existing.organizationId },
+      orderBy: { date: "desc" }
+    });
+
+    await prisma.organization.update({
+      where: { id: existing.organizationId },
+      data: { lastInteractionAt: latest?.date || null }
+    });
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar la interacción." });
+  }
+});
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

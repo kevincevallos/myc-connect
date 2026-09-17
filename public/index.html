@@ -151,6 +151,36 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
   </div>
 </div>
 
+
+<div class="modal" id="interactionModal">
+  <div class="modal-box">
+    <h2 id="interactionModalTitle">Registrar interacción</h2>
+    <form id="interactionForm">
+      <input type="hidden" name="id" />
+      <input type="hidden" name="organizationId" />
+      <div class="grid">
+        <div><label>Fecha y hora</label><input type="datetime-local" name="date" /></div>
+        <div><label>Tipo *</label><select name="type" required>
+          <option value="EMAIL">Email</option><option value="CALL">Llamada</option>
+          <option value="LINKEDIN">LinkedIn</option><option value="INSTAGRAM">Instagram</option>
+          <option value="WHATSAPP">WhatsApp</option><option value="MEETING">Reunión</option>
+          <option value="EVENT">Evento</option><option value="OTHER">Otro</option>
+        </select></div>
+        <div class="full"><label>Nota / resultado *</label><textarea name="note" required placeholder="¿Qué ocurrió? ¿Qué se acordó?"></textarea></div>
+        <div><label>Responsable</label><input name="responsible" placeholder="Ej. Evelyn / Kevin" /></div>
+        <div><label>Adjunto o enlace</label><input name="attachmentUrl" placeholder="https://..." /></div>
+        <div><label>Próxima acción</label><input name="nextAction" placeholder="Ej. Enviar presentación comercial" /></div>
+        <div><label>Fecha límite / seguimiento</label><input type="date" name="deadline" /></div>
+      </div>
+      <div id="interactionNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeInteractionModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar interacción</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 const app = document.getElementById("app");
 const modal = document.getElementById("organizationModal");
@@ -320,6 +350,74 @@ async function contactsPage(){
 }
 
 
+
+const interactionModal = document.getElementById("interactionModal");
+const interactionForm = document.getElementById("interactionForm");
+const interactionNotice = document.getElementById("interactionNotice");
+const interactionLabels = { EMAIL:"Email", CALL:"Llamada", LINKEDIN:"LinkedIn", INSTAGRAM:"Instagram", WHATSAPP:"WhatsApp", MEETING:"Reunión", EVENT:"Evento", OTHER:"Otro" };
+
+function toLocalDateTimeInput(v){
+  const d = v ? new Date(v) : new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,16);
+}
+
+function openInteractionCreate(organizationId){
+  interactionForm.reset();
+  interactionForm.elements.id.value = "";
+  interactionForm.elements.organizationId.value = organizationId;
+  interactionForm.elements.date.value = toLocalDateTimeInput();
+  document.getElementById("interactionModalTitle").textContent = "Registrar interacción";
+  interactionNotice.textContent = "";
+  interactionModal.classList.add("open");
+}
+
+function openInteractionEdit(i){
+  interactionForm.reset();
+  document.getElementById("interactionModalTitle").textContent = "Editar interacción";
+  interactionForm.elements.id.value = i.id;
+  interactionForm.elements.organizationId.value = i.organizationId;
+  interactionForm.elements.date.value = toLocalDateTimeInput(i.date);
+  interactionForm.elements.type.value = i.type || "OTHER";
+  interactionForm.elements.note.value = i.note || "";
+  interactionForm.elements.responsible.value = i.responsible || "";
+  interactionForm.elements.attachmentUrl.value = i.attachmentUrl || "";
+  interactionForm.elements.nextAction.value = i.nextAction || "";
+  interactionForm.elements.deadline.value = i.deadline ? new Date(i.deadline).toISOString().slice(0,10) : "";
+  interactionNotice.textContent = "";
+  interactionModal.classList.add("open");
+}
+
+document.getElementById("closeInteractionModal").onclick = () => interactionModal.classList.remove("open");
+
+interactionForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fd = new FormData(interactionForm);
+  const data = Object.fromEntries(fd.entries());
+  const id = data.id;
+  const organizationId = data.organizationId;
+  delete data.id; delete data.organizationId;
+  interactionNotice.textContent = "Guardando...";
+
+  const res = await fetch(id ? `/api/interactions/${id}` : `/api/organizations/${organizationId}/interactions`, {
+    method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  const out = await res.json();
+  if (!res.ok) { interactionNotice.textContent = out.error || "Ocurrió un error."; return; }
+  interactionNotice.textContent = id ? "Interacción actualizada." : "Interacción registrada.";
+  setTimeout(() => { interactionModal.classList.remove("open"); route(); }, 300);
+});
+
+async function deleteInteraction(id){
+  if (!confirm("¿Eliminar esta interacción del historial?")) return;
+  const res = await fetch(`/api/interactions/${id}`, { method: "DELETE" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+  route();
+}
+
 async function dashboard(){
   setActive("dashboard");
   app.innerHTML=`<div class="top"><div><h1>Dashboard</h1><small>Resumen comercial de Mishki Yaku Collective</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
@@ -387,6 +485,7 @@ async function organizationProfile(id){
         <div class="kv"><strong>Potencial</strong><span>${esc(labels[o.strategicPotential]||"Sin definir")}</span></div>
         <div class="kv"><strong>Pipeline</strong><span class="pill">${esc(o.pipelineStage.replaceAll("_"," "))}</span></div>
         <div class="kv"><strong>Fuente lead</strong><span>${esc(o.leadSource||"—")}</span></div>
+        <div class="kv"><strong>Última interacción</strong><span>${fmtDate(o.lastInteractionAt)}</span></div>
       `)}
       ${section("Qué ofrece",`<p>${esc(o.offerSummary||"Sin información registrada.")}</p>`)}
       ${section("Qué necesita",o.needs?.length?`<div class="tags">${o.needs.map(n=>`<span class="tag">${esc(n)}</span>`).join("")}</div>`:`<div class="empty">Sin necesidades registradas.</div>`)}
@@ -410,7 +509,24 @@ async function organizationProfile(id){
             </span>
           </div>`).join("") : `<div class="empty">Todavía no hay contactos.</div>`}
       `)}
-      ${section("Historial de interacciones",interactions.length?interactions.map(i=>`<div class="kv"><strong>${fmtDate(i.date)} · ${esc(i.type)}</strong><span>${esc(i.note)}</span></div>`).join(""):`<div class="empty">Todavía no hay interacciones.</div>`)}
+      ${section("Historial de interacciones",`
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="primary" onclick="openInteractionCreate('${o.id}')">+ Añadir interacción</button>
+        </div>
+        ${interactions.length ? interactions.map(i=>`
+          <div class="kv">
+            <strong>${fmtDate(i.date)} · ${esc(interactionLabels[i.type] || i.type)}</strong>
+            <span>
+              ${esc(i.note)}
+              ${i.responsible ? `<br><span class="muted">Responsable: ${esc(i.responsible)}</span>` : ""}
+              ${i.nextAction ? `<br><span class="muted">Próxima acción: ${esc(i.nextAction)}${i.deadline ? " · " + fmtDate(i.deadline) : ""}</span>` : ""}
+              ${i.attachmentUrl ? `<br><a class="link" target="_blank" href="${esc(i.attachmentUrl)}">Abrir enlace ↗</a>` : ""}
+              <br>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick='openInteractionEdit(${JSON.stringify(i)})'>Editar</button>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="deleteInteraction('${i.id}')">Eliminar</button>
+            </span>
+          </div>`).join("") : `<div class="empty">Todavía no hay interacciones.</div>`}
+      `)}
     </div>
     <div class="stack">
       ${section("Próxima acción",`<p><strong>${esc(o.nextAction||"Sin próxima acción")}</strong></p><div class="muted">${fmtDate(o.nextActionDate)}</div>`)}
