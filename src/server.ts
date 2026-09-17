@@ -488,6 +488,161 @@ app.delete("/api/interactions/:id", async (req, res) => {
   }
 });
 
+
+app.get("/api/opportunities", async (_req, res) => {
+  try {
+    const opportunities = await prisma.opportunity.findMany({
+      include: { organization: true },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(opportunities);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron cargar las oportunidades." });
+  }
+});
+
+app.post("/api/organizations/:organizationId/opportunities", async (req, res) => {
+  try {
+    const organization = await prisma.organization.findUnique({
+      where: { id: req.params.organizationId }
+    });
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organización no encontrada." });
+    }
+
+    const {
+      title,
+      description,
+      stage = "IDENTIFIED",
+      nextAction,
+      nextActionDate
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "El título de la oportunidad es obligatorio." });
+    }
+
+    const opportunity = await prisma.opportunity.create({
+      data: {
+        organizationId: req.params.organizationId,
+        title,
+        description: description || null,
+        stage,
+        nextAction: nextAction || null,
+        nextActionDate: nextActionDate ? new Date(nextActionDate) : null
+      }
+    });
+
+    await prisma.organization.update({
+      where: { id: req.params.organizationId },
+      data: {
+        pipelineStage: stage,
+        ...(nextAction ? { nextAction } : {}),
+        ...(nextActionDate ? { nextActionDate: new Date(nextActionDate) } : {})
+      }
+    });
+
+    res.status(201).json(opportunity);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo crear la oportunidad." });
+  }
+});
+
+app.put("/api/opportunities/:id", async (req, res) => {
+  try {
+    const existing = await prisma.opportunity.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Oportunidad no encontrada." });
+    }
+
+    const {
+      title,
+      description,
+      stage,
+      nextAction,
+      nextActionDate
+    } = req.body;
+
+    if (!title || !stage) {
+      return res.status(400).json({ error: "Título y etapa son obligatorios." });
+    }
+
+    const opportunity = await prisma.opportunity.update({
+      where: { id: req.params.id },
+      data: {
+        title,
+        description: description || null,
+        stage,
+        nextAction: nextAction || null,
+        nextActionDate: nextActionDate ? new Date(nextActionDate) : null
+      }
+    });
+
+    await prisma.organization.update({
+      where: { id: existing.organizationId },
+      data: {
+        pipelineStage: stage,
+        ...(nextAction ? { nextAction } : {}),
+        ...(nextActionDate ? { nextActionDate: new Date(nextActionDate) } : {})
+      }
+    });
+
+    res.json(opportunity);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo actualizar la oportunidad." });
+  }
+});
+
+app.patch("/api/opportunities/:id/stage", async (req, res) => {
+  try {
+    const existing = await prisma.opportunity.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Oportunidad no encontrada." });
+    }
+
+    const { stage } = req.body;
+    if (!stage) {
+      return res.status(400).json({ error: "La etapa es obligatoria." });
+    }
+
+    const opportunity = await prisma.opportunity.update({
+      where: { id: req.params.id },
+      data: { stage }
+    });
+
+    await prisma.organization.update({
+      where: { id: existing.organizationId },
+      data: { pipelineStage: stage }
+    });
+
+    res.json(opportunity);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo cambiar la etapa." });
+  }
+});
+
+app.delete("/api/opportunities/:id", async (req, res) => {
+  try {
+    await prisma.opportunity.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar la oportunidad." });
+  }
+});
+
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

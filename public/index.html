@@ -29,6 +29,17 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
 @media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.layout{grid-template-columns:1fr}aside{display:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.full{grid-column:auto}}
 </style>
+
+<style id="pipeline-extra">
+.pipeline-board{display:grid;grid-template-columns:repeat(8,minmax(230px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.pipeline-col{background:#f3f5f7;border:1px solid var(--border);border-radius:14px;padding:12px;min-height:360px}
+.pipeline-col h3{font-size:14px;margin:0 0 10px;color:var(--blue)}
+.opp-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+.opp-card strong{display:block;margin-bottom:5px}
+.opp-card .org{font-size:12px;color:var(--muted);margin-bottom:8px}
+.opp-card select{width:100%;padding:7px;border:1px solid var(--border);border-radius:8px}
+</style>
+
 </head>
 <body>
 <div class="layout">
@@ -39,7 +50,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
     <a data-route="dashboard">Dashboard</a>
     <a data-route="organizations">Organizaciones</a>
     <a data-route="contacts">Contactos</a>
-    <a>Pipeline</a>
+    <a data-route="pipeline">Pipeline</a>
     <a>Matches</a>
     <a>Seguimientos</a>
   </nav>
@@ -176,6 +187,57 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
       <div class="actions">
         <button type="button" class="secondary" id="closeInteractionModal">Cancelar</button>
         <button type="submit" class="primary">Guardar interacción</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div class="modal" id="opportunityModal">
+  <div class="modal-box">
+    <h2 id="opportunityModalTitle">Nueva oportunidad</h2>
+    <form id="opportunityForm">
+      <input type="hidden" name="id" />
+      <input type="hidden" name="organizationId" />
+      <div class="grid">
+        <div class="full">
+          <label>Título *</label>
+          <input name="title" required placeholder="Ej. Introducción comercial con compradores en Alemania" />
+        </div>
+        <div class="full">
+          <label>Descripción</label>
+          <textarea name="description"></textarea>
+        </div>
+        <div>
+          <label>Etapa *</label>
+          <select name="stage" required>
+            <option value="IDENTIFIED">Identified</option>
+            <option value="CONTACTED">Contacted</option>
+            <option value="RESPONDED">Responded</option>
+            <option value="MEETING">Meeting</option>
+            <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option>
+            <option value="PROPOSAL">Proposal</option>
+            <option value="NEGOTIATION">Negotiation</option>
+            <option value="CLIENT">Client</option>
+            <option value="CLOSED">Closed</option>
+            <option value="NOT_INTERESTED">Not interested</option>
+            <option value="NOT_QUALIFIED">Not qualified</option>
+            <option value="ON_HOLD">On hold</option>
+          </select>
+        </div>
+        <div>
+          <label>Fecha próxima acción</label>
+          <input type="date" name="nextActionDate" />
+        </div>
+        <div class="full">
+          <label>Próxima acción</label>
+          <input name="nextAction" placeholder="Ej. Enviar propuesta comercial" />
+        </div>
+      </div>
+      <div id="opportunityNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeOpportunityModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar oportunidad</button>
       </div>
     </form>
   </div>
@@ -418,6 +480,146 @@ async function deleteInteraction(id){
   route();
 }
 
+
+const opportunityModal = document.getElementById("opportunityModal");
+const opportunityForm = document.getElementById("opportunityForm");
+const opportunityNotice = document.getElementById("opportunityNotice");
+
+const pipelineStages = [
+  "IDENTIFIED","CONTACTED","RESPONDED","MEETING",
+  "QUALIFIED_OPPORTUNITY","PROPOSAL","NEGOTIATION","CLIENT"
+];
+
+const pipelineLabels = {
+  IDENTIFIED:"Identified",
+  CONTACTED:"Contacted",
+  RESPONDED:"Responded",
+  MEETING:"Meeting",
+  QUALIFIED_OPPORTUNITY:"Qualified Opportunity",
+  PROPOSAL:"Proposal",
+  NEGOTIATION:"Negotiation",
+  CLIENT:"Client",
+  CLOSED:"Closed",
+  NOT_INTERESTED:"Not interested",
+  NOT_QUALIFIED:"Not qualified",
+  ON_HOLD:"On hold"
+};
+
+function openOpportunityCreate(organizationId){
+  opportunityForm.reset();
+  opportunityForm.elements.id.value = "";
+  opportunityForm.elements.organizationId.value = organizationId;
+  document.getElementById("opportunityModalTitle").textContent = "Nueva oportunidad";
+  opportunityNotice.textContent = "";
+  opportunityModal.classList.add("open");
+}
+
+function openOpportunityEdit(o){
+  opportunityForm.reset();
+  document.getElementById("opportunityModalTitle").textContent = "Editar oportunidad";
+  opportunityForm.elements.id.value = o.id;
+  opportunityForm.elements.organizationId.value = o.organizationId;
+  opportunityForm.elements.title.value = o.title || "";
+  opportunityForm.elements.description.value = o.description || "";
+  opportunityForm.elements.stage.value = o.stage || "IDENTIFIED";
+  opportunityForm.elements.nextAction.value = o.nextAction || "";
+  opportunityForm.elements.nextActionDate.value = o.nextActionDate ? new Date(o.nextActionDate).toISOString().slice(0,10) : "";
+  opportunityNotice.textContent = "";
+  opportunityModal.classList.add("open");
+}
+
+document.getElementById("closeOpportunityModal").onclick = () => opportunityModal.classList.remove("open");
+
+opportunityForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fd = new FormData(opportunityForm);
+  const data = Object.fromEntries(fd.entries());
+  const id = data.id;
+  const organizationId = data.organizationId;
+  delete data.id;
+  delete data.organizationId;
+
+  opportunityNotice.textContent = "Guardando...";
+
+  const res = await fetch(
+    id ? `/api/opportunities/${id}` : `/api/organizations/${organizationId}/opportunities`,
+    {
+      method: id ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    }
+  );
+
+  const out = await res.json();
+  if (!res.ok) {
+    opportunityNotice.textContent = out.error || "Ocurrió un error.";
+    return;
+  }
+
+  opportunityNotice.textContent = id ? "Oportunidad actualizada." : "Oportunidad creada.";
+  setTimeout(() => {
+    opportunityModal.classList.remove("open");
+    route();
+  }, 300);
+});
+
+async function deleteOpportunity(id){
+  if (!confirm("¿Eliminar esta oportunidad?")) return;
+  const res = await fetch(`/api/opportunities/${id}`, { method: "DELETE" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+  route();
+}
+
+async function changeOpportunityStage(id, stage){
+  const res = await fetch(`/api/opportunities/${id}/stage`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stage })
+  });
+  const out = await res.json();
+  if (!res.ok) {
+    alert(out.error || "No se pudo cambiar la etapa.");
+    return;
+  }
+  pipelinePage();
+}
+
+async function pipelinePage(){
+  setActive("pipeline");
+  app.innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Pipeline comercial</h1>
+        <small>Oportunidades activas por etapa comercial</small>
+      </div>
+    </div>
+    <div id="pipelineBoard" class="pipeline-board"></div>`;
+
+  const res = await fetch("/api/opportunities");
+  const items = await res.json();
+
+  const board = document.getElementById("pipelineBoard");
+  board.innerHTML = pipelineStages.map(stage => {
+    const stageItems = items.filter(x => x.stage === stage);
+    return `
+      <section class="pipeline-col">
+        <h3>${pipelineLabels[stage]} · ${stageItems.length}</h3>
+        ${stageItems.length ? stageItems.map(o => `
+          <div class="opp-card">
+            <strong>${esc(o.title)}</strong>
+            <div class="org">${esc(o.organization?.name || "—")}</div>
+            ${o.nextAction ? `<div class="muted" style="font-size:12px;margin-bottom:8px">Próxima: ${esc(o.nextAction)}</div>` : ""}
+            <select onchange="changeOpportunityStage('${o.id}', this.value)">
+              ${pipelineStages.map(s => `<option value="${s}" ${s===o.stage?"selected":""}>${pipelineLabels[s]}</option>`).join("")}
+            </select>
+          </div>
+        `).join("") : `<div class="empty">Sin oportunidades</div>`}
+      </section>`;
+  }).join("");
+}
+
+
 async function dashboard(){
   setActive("dashboard");
   app.innerHTML=`<div class="top"><div><h1>Dashboard</h1><small>Resumen comercial de Mishki Yaku Collective</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
@@ -536,7 +738,23 @@ async function organizationProfile(id){
         ${o.instagram?`<p><a class="link" target="_blank" href="${esc(o.instagram)}">Instagram ↗</a></p>`:""}
         ${!o.website&&!o.linkedin&&!o.instagram?`<div class="empty">Sin enlaces.</div>`:""}
       `)}
-      ${section("Oportunidades",opps.length?opps.map(x=>`<div class="kv"><strong>${esc(x.title)}</strong><span>${esc(x.stage.replaceAll("_"," "))}</span></div>`).join(""):`<div class="empty">Sin oportunidades.</div>`)}
+      ${section("Oportunidades",`
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="primary" onclick="openOpportunityCreate('${o.id}')">+ Añadir oportunidad</button>
+        </div>
+        ${opps.length ? opps.map(x=>`
+          <div class="kv">
+            <strong>${esc(x.title)}</strong>
+            <span>
+              <span class="pill">${esc(pipelineLabels[x.stage] || x.stage)}</span>
+              ${x.description ? `<br><span class="muted">${esc(x.description)}</span>` : ""}
+              ${x.nextAction ? `<br><span class="muted">Próxima acción: ${esc(x.nextAction)}${x.nextActionDate ? " · " + fmtDate(x.nextActionDate) : ""}</span>` : ""}
+              <br>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick='openOpportunityEdit(${JSON.stringify(x)})'>Editar</button>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="deleteOpportunity('${x.id}')">Eliminar</button>
+            </span>
+          </div>`).join("") : `<div class="empty">Sin oportunidades.</div>`}
+      `)}
       ${section("Matches",matches.length?matches.map(x=>`<div class="kv"><strong>${esc(x.other.name)}</strong><span>${esc(x.m.status.replaceAll("_"," "))}</span></div>`).join(""):`<div class="empty">Sin matches.</div>`)}
       ${section("Seguimientos",tasks.length?tasks.map(t=>`<div class="kv"><strong>${esc(t.title)}</strong><span>${fmtDate(t.dueDate)}${t.completed?" · Completado":""}</span></div>`).join(""):`<div class="empty">Sin seguimientos.</div>`)}
     </div>
@@ -549,6 +767,7 @@ async function route(){
   if(h==="dashboard") return dashboard();
   if(h==="organizations") return organizations();
   if(h==="contacts") return contactsPage();
+  if(h==="pipeline") return pipelinePage();
   if(h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
   return dashboard();
 }
