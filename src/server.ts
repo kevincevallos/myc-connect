@@ -643,6 +643,172 @@ app.delete("/api/opportunities/:id", async (req, res) => {
 });
 
 
+
+app.get("/api/matches", async (_req, res) => {
+  try {
+    const matches = await prisma.match.findMany({
+      include: {
+        organizationA: true,
+        organizationB: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(matches);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron cargar los matches." });
+  }
+});
+
+app.post("/api/matches", async (req, res) => {
+  try {
+    const {
+      organizationAId,
+      organizationBId,
+      reason,
+      needOffer,
+      status = "POTENTIAL",
+      mycRole,
+      nextAction,
+      notes
+    } = req.body;
+
+    if (!organizationAId || !organizationBId || !reason) {
+      return res.status(400).json({
+        error: "Organización A, Organización B y motivo del match son obligatorios."
+      });
+    }
+
+    if (organizationAId === organizationBId) {
+      return res.status(400).json({
+        error: "No se puede crear un match de una organización consigo misma."
+      });
+    }
+
+    const duplicate = await prisma.match.findFirst({
+      where: {
+        OR: [
+          { organizationAId, organizationBId },
+          { organizationAId: organizationBId, organizationBId: organizationAId }
+        ]
+      }
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: "Ya existe un match entre estas dos organizaciones."
+      });
+    }
+
+    const match = await prisma.match.create({
+      data: {
+        organizationAId,
+        organizationBId,
+        reason,
+        needOffer: needOffer || null,
+        status,
+        mycRole: mycRole || null,
+        nextAction: nextAction || null,
+        notes: notes || null
+      },
+      include: {
+        organizationA: true,
+        organizationB: true
+      }
+    });
+
+    res.status(201).json(match);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo crear el match." });
+  }
+});
+
+app.put("/api/matches/:id", async (req, res) => {
+  try {
+    const existing = await prisma.match.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Match no encontrado." });
+    }
+
+    const {
+      organizationAId,
+      organizationBId,
+      reason,
+      needOffer,
+      status,
+      mycRole,
+      nextAction,
+      notes
+    } = req.body;
+
+    if (!organizationAId || !organizationBId || !reason || !status) {
+      return res.status(400).json({
+        error: "Organizaciones, motivo y estado son obligatorios."
+      });
+    }
+
+    if (organizationAId === organizationBId) {
+      return res.status(400).json({
+        error: "No se puede crear un match de una organización consigo misma."
+      });
+    }
+
+    const duplicate = await prisma.match.findFirst({
+      where: {
+        id: { not: existing.id },
+        OR: [
+          { organizationAId, organizationBId },
+          { organizationAId: organizationBId, organizationBId: organizationAId }
+        ]
+      }
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: "Ya existe otro match entre estas dos organizaciones."
+      });
+    }
+
+    const match = await prisma.match.update({
+      where: { id: req.params.id },
+      data: {
+        organizationAId,
+        organizationBId,
+        reason,
+        needOffer: needOffer || null,
+        status,
+        mycRole: mycRole || null,
+        nextAction: nextAction || null,
+        notes: notes || null
+      },
+      include: {
+        organizationA: true,
+        organizationB: true
+      }
+    });
+
+    res.json(match);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo actualizar el match." });
+  }
+});
+
+app.delete("/api/matches/:id", async (req, res) => {
+  try {
+    await prisma.match.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar el match." });
+  }
+});
+
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

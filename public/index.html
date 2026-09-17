@@ -40,6 +40,17 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
 .opp-card select{width:100%;padding:7px;border:1px solid var(--border);border-radius:8px}
 </style>
 
+
+<style id="matches-extra">
+.match-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px}
+.match-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
+.match-pair{font-size:16px;font-weight:800;color:var(--blue);margin-bottom:8px}
+.match-arrow{color:var(--muted);padding:0 6px}
+.match-meta{font-size:13px;color:var(--muted);margin:6px 0}
+.match-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+@media(max-width:760px){.match-grid{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <div class="layout">
@@ -51,7 +62,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
     <a data-route="organizations">Organizaciones</a>
     <a data-route="contacts">Contactos</a>
     <a data-route="pipeline">Pipeline</a>
-    <a>Matches</a>
+    <a data-route="matches">Matches</a>
     <a>Seguimientos</a>
   </nav>
 </aside>
@@ -238,6 +249,69 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
       <div class="actions">
         <button type="button" class="secondary" id="closeOpportunityModal">Cancelar</button>
         <button type="submit" class="primary">Guardar oportunidad</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div class="modal" id="matchModal">
+  <div class="modal-box">
+    <h2 id="matchModalTitle">Crear match</h2>
+    <form id="matchForm">
+      <input type="hidden" name="id" />
+      <div class="grid">
+        <div>
+          <label>Organización A *</label>
+          <select name="organizationAId" required></select>
+        </div>
+        <div>
+          <label>Organización B *</label>
+          <select name="organizationBId" required></select>
+        </div>
+        <div class="full">
+          <label>Motivo / compatibilidad *</label>
+          <textarea name="reason" required placeholder="Explique por qué estas organizaciones tienen potencial de colaboración."></textarea>
+        </div>
+        <div class="full">
+          <label>Need ↔ Offer</label>
+          <input name="needOffer" placeholder="Ej. Buyer of premium roses ↔ Ecuadorian rose supplier" />
+        </div>
+        <div>
+          <label>Estado *</label>
+          <select name="status" required>
+            <option value="POTENTIAL">Potential</option>
+            <option value="CONTACT_PLANNED">Contact planned</option>
+            <option value="INTRODUCED">Introduced</option>
+            <option value="MEETING">Meeting</option>
+            <option value="ACTIVE_OPPORTUNITY">Active opportunity</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+        </div>
+        <div>
+          <label>Rol de MYC</label>
+          <select name="mycRole">
+            <option value="">Sin definir</option>
+            <option value="Introduction">Introduction</option>
+            <option value="Coordination">Coordination</option>
+            <option value="Representation">Representation</option>
+            <option value="Advisory">Advisory</option>
+            <option value="Follow-up">Follow-up</option>
+          </select>
+        </div>
+        <div class="full">
+          <label>Próxima acción</label>
+          <input name="nextAction" placeholder="Ej. Presentar ambas empresas por email" />
+        </div>
+        <div class="full">
+          <label>Notas</label>
+          <textarea name="notes"></textarea>
+        </div>
+      </div>
+      <div id="matchNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeMatchModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar match</button>
       </div>
     </form>
   </div>
@@ -620,6 +694,153 @@ async function pipelinePage(){
 }
 
 
+
+const matchModal = document.getElementById("matchModal");
+const matchForm = document.getElementById("matchForm");
+const matchNotice = document.getElementById("matchNotice");
+
+const matchLabels = {
+  POTENTIAL: "Potential",
+  CONTACT_PLANNED: "Contact planned",
+  INTRODUCED: "Introduced",
+  MEETING: "Meeting",
+  ACTIVE_OPPORTUNITY: "Active opportunity",
+  CLOSED: "Closed"
+};
+
+let organizationOptionsCache = [];
+
+async function loadOrganizationOptions(){
+  const res = await fetch("/api/organizations");
+  organizationOptionsCache = await res.json();
+
+  const options = organizationOptionsCache
+    .map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`)
+    .join("");
+
+  matchForm.elements.organizationAId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
+  matchForm.elements.organizationBId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
+}
+
+async function openMatchCreate(prefillOrganizationId = ""){
+  matchForm.reset();
+  matchForm.elements.id.value = "";
+  document.getElementById("matchModalTitle").textContent = "Crear match";
+  matchNotice.textContent = "";
+  await loadOrganizationOptions();
+
+  if (prefillOrganizationId) {
+    matchForm.elements.organizationAId.value = prefillOrganizationId;
+  }
+
+  matchModal.classList.add("open");
+}
+
+async function openMatchEdit(m){
+  matchForm.reset();
+  document.getElementById("matchModalTitle").textContent = "Editar match";
+  matchNotice.textContent = "";
+  await loadOrganizationOptions();
+
+  matchForm.elements.id.value = m.id;
+  matchForm.elements.organizationAId.value = m.organizationAId;
+  matchForm.elements.organizationBId.value = m.organizationBId;
+  matchForm.elements.reason.value = m.reason || "";
+  matchForm.elements.needOffer.value = m.needOffer || "";
+  matchForm.elements.status.value = m.status || "POTENTIAL";
+  matchForm.elements.mycRole.value = m.mycRole || "";
+  matchForm.elements.nextAction.value = m.nextAction || "";
+  matchForm.elements.notes.value = m.notes || "";
+
+  matchModal.classList.add("open");
+}
+
+document.getElementById("closeMatchModal").onclick = () => matchModal.classList.remove("open");
+
+matchForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fd = new FormData(matchForm);
+  const data = Object.fromEntries(fd.entries());
+  const id = data.id;
+  delete data.id;
+
+  matchNotice.textContent = "Guardando...";
+
+  const res = await fetch(id ? `/api/matches/${id}` : "/api/matches", {
+    method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const out = await res.json();
+
+  if (!res.ok) {
+    matchNotice.textContent = out.error || "Ocurrió un error.";
+    return;
+  }
+
+  matchNotice.textContent = id ? "Match actualizado." : "Match creado.";
+  setTimeout(() => {
+    matchModal.classList.remove("open");
+    route();
+  }, 300);
+});
+
+async function deleteMatch(id){
+  if (!confirm("¿Eliminar este match?")) return;
+  const res = await fetch(`/api/matches/${id}`, { method: "DELETE" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+  route();
+}
+
+async function matchesPage(){
+  setActive("matches");
+  app.innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Matches</h1>
+        <small>Conexiones potenciales Ecuador ↔ Europa</small>
+      </div>
+      <button class="primary" onclick="openMatchCreate()">+ Crear match</button>
+    </div>
+    <div id="matchList" class="match-grid"></div>`;
+
+  const res = await fetch("/api/matches");
+  const items = await res.json();
+  const list = document.getElementById("matchList");
+
+  if (!items.length) {
+    list.innerHTML = `<section class="panel empty">Todavía no hay matches registrados.</section>`;
+    return;
+  }
+
+  list.innerHTML = items.map(m => `
+    <section class="match-card">
+      <div class="match-pair">
+        ${esc(m.organizationA?.name || "—")}
+        <span class="match-arrow">↔</span>
+        ${esc(m.organizationB?.name || "—")}
+      </div>
+      <div class="match-meta">
+        ${esc(m.organizationA?.country || "")} ↔ ${esc(m.organizationB?.country || "")}
+      </div>
+      <p>${esc(m.reason)}</p>
+      ${m.needOffer ? `<div class="match-meta"><strong>Need ↔ Offer:</strong> ${esc(m.needOffer)}</div>` : ""}
+      <div class="match-meta"><strong>Estado:</strong> ${esc(matchLabels[m.status] || m.status)}</div>
+      ${m.mycRole ? `<div class="match-meta"><strong>Rol MYC:</strong> ${esc(m.mycRole)}</div>` : ""}
+      ${m.nextAction ? `<div class="match-meta"><strong>Próxima acción:</strong> ${esc(m.nextAction)}</div>` : ""}
+      <div class="match-actions">
+        <button class="secondary" onclick='openMatchEdit(${JSON.stringify(m)})'>Editar</button>
+        <button class="secondary" onclick="goto('organization/${m.organizationAId}')">Ver A</button>
+        <button class="secondary" onclick="goto('organization/${m.organizationBId}')">Ver B</button>
+        <button class="secondary" onclick="deleteMatch('${m.id}')">Eliminar</button>
+      </div>
+    </section>
+  `).join("");
+}
+
+
 async function dashboard(){
   setActive("dashboard");
   app.innerHTML=`<div class="top"><div><h1>Dashboard</h1><small>Resumen comercial de Mishki Yaku Collective</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
@@ -755,7 +976,20 @@ async function organizationProfile(id){
             </span>
           </div>`).join("") : `<div class="empty">Sin oportunidades.</div>`}
       `)}
-      ${section("Matches",matches.length?matches.map(x=>`<div class="kv"><strong>${esc(x.other.name)}</strong><span>${esc(x.m.status.replaceAll("_"," "))}</span></div>`).join(""):`<div class="empty">Sin matches.</div>`)}
+      ${section("Matches",`
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="primary" onclick="openMatchCreate('${o.id}')">+ Crear match</button>
+        </div>
+        ${matches.length ? matches.map(x=>`
+          <div class="kv">
+            <strong>${esc(x.other.name)}</strong>
+            <span>
+              <span class="pill">${esc(matchLabels[x.m.status] || x.m.status)}</span>
+              ${x.m.reason ? `<br><span class="muted">${esc(x.m.reason)}</span>` : ""}
+              ${x.m.nextAction ? `<br><span class="muted">Próxima acción: ${esc(x.m.nextAction)}</span>` : ""}
+            </span>
+          </div>`).join("") : `<div class="empty">Sin matches.</div>`}
+      `)}
       ${section("Seguimientos",tasks.length?tasks.map(t=>`<div class="kv"><strong>${esc(t.title)}</strong><span>${fmtDate(t.dueDate)}${t.completed?" · Completado":""}</span></div>`).join(""):`<div class="empty">Sin seguimientos.</div>`)}
     </div>
   </div>`;
@@ -768,6 +1002,7 @@ async function route(){
   if(h==="organizations") return organizations();
   if(h==="contacts") return contactsPage();
   if(h==="pipeline") return pipelinePage();
+  if(h==="matches") return matchesPage();
   if(h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
   return dashboard();
 }
