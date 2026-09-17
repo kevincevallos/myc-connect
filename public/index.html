@@ -38,7 +38,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
   <nav>
     <a data-route="dashboard">Dashboard</a>
     <a data-route="organizations">Organizaciones</a>
-    <a>Contactos</a>
+    <a data-route="contacts">Contactos</a>
     <a>Pipeline</a>
     <a>Matches</a>
     <a>Seguimientos</a>
@@ -108,6 +108,49 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
   </div>
 </div>
 
+
+<div class="modal" id="contactModal">
+  <div class="modal-box">
+    <h2 id="contactModalTitle">Registrar contacto</h2>
+    <form id="contactForm">
+      <input type="hidden" name="id" />
+      <input type="hidden" name="organizationId" />
+      <div class="grid">
+        <div><label>Nombre *</label><input name="firstName" required /></div>
+        <div><label>Apellido *</label><input name="lastName" required /></div>
+        <div><label>Cargo / rol</label><input name="jobTitle" /></div>
+        <div><label>Email</label><input type="email" name="email" /></div>
+        <div><label>Teléfono / WhatsApp</label><input name="phoneWhatsapp" /></div>
+        <div><label>LinkedIn</label><input name="linkedin" /></div>
+        <div><label>Idioma preferido</label>
+          <select name="preferredLanguage">
+            <option value="">Sin definir</option>
+            <option value="Español">Español</option>
+            <option value="English">English</option>
+            <option value="Deutsch">Deutsch</option>
+            <option value="Français">Français</option>
+            <option value="Italiano">Italiano</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div>
+          <label>Contacto principal</label>
+          <select name="isPrimary">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
+        </div>
+        <div class="full"><label>Notas</label><textarea name="notes"></textarea></div>
+      </div>
+      <div id="contactNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeContactModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar contacto</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 const app = document.getElementById("app");
 const modal = document.getElementById("organizationModal");
@@ -161,6 +204,121 @@ form.addEventListener("submit",async e=>{
   notice.textContent=id?"Organización actualizada.":"Organización registrada.";
   setTimeout(()=>{modal.classList.remove("open"); route();},350);
 });
+
+
+const contactModal = document.getElementById("contactModal");
+const contactForm = document.getElementById("contactForm");
+const contactNotice = document.getElementById("contactNotice");
+
+function openContactCreate(organizationId){
+  contactForm.reset();
+  contactForm.elements.id.value = "";
+  contactForm.elements.organizationId.value = organizationId;
+  document.getElementById("contactModalTitle").textContent = "Registrar contacto";
+  contactNotice.textContent = "";
+  contactModal.classList.add("open");
+}
+
+function openContactEdit(c){
+  contactForm.reset();
+  document.getElementById("contactModalTitle").textContent = "Editar contacto";
+  contactForm.elements.id.value = c.id;
+  contactForm.elements.organizationId.value = c.organizationId;
+  contactForm.elements.firstName.value = c.firstName || "";
+  contactForm.elements.lastName.value = c.lastName || "";
+  contactForm.elements.jobTitle.value = c.jobTitle || "";
+  contactForm.elements.email.value = c.email || "";
+  contactForm.elements.phoneWhatsapp.value = c.phoneWhatsapp || "";
+  contactForm.elements.linkedin.value = c.linkedin || "";
+  contactForm.elements.preferredLanguage.value = c.preferredLanguage || "";
+  contactForm.elements.isPrimary.value = c.isPrimary ? "true" : "false";
+  contactForm.elements.notes.value = c.notes || "";
+  contactNotice.textContent = "";
+  contactModal.classList.add("open");
+}
+
+document.getElementById("closeContactModal").onclick = () => contactModal.classList.remove("open");
+
+contactForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fd = new FormData(contactForm);
+  const data = Object.fromEntries(fd.entries());
+  const id = data.id;
+  const organizationId = data.organizationId;
+  delete data.id;
+  delete data.organizationId;
+  data.isPrimary = data.isPrimary === "true";
+
+  contactNotice.textContent = "Guardando...";
+
+  const res = await fetch(
+    id ? `/api/contacts/${id}` : `/api/organizations/${organizationId}/contacts`,
+    {
+      method: id ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    }
+  );
+
+  const out = await res.json();
+  if (!res.ok) {
+    contactNotice.textContent = out.error || "Ocurrió un error.";
+    return;
+  }
+
+  contactNotice.textContent = id ? "Contacto actualizado." : "Contacto registrado.";
+  setTimeout(() => {
+    contactModal.classList.remove("open");
+    route();
+  }, 300);
+});
+
+async function deleteContact(id){
+  if (!confirm("¿Eliminar este contacto?")) return;
+  const res = await fetch(`/api/contacts/${id}`, { method: "DELETE" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+  route();
+}
+
+async function contactsPage(){
+  setActive("contacts");
+  app.innerHTML = `
+    <div class="top">
+      <div><h1>Contactos</h1><small>Personas vinculadas a organizaciones</small></div>
+    </div>
+    <section class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Contacto</th>
+            <th>Organización</th>
+            <th>Cargo</th>
+            <th>Email / WhatsApp</th>
+            <th>Idioma</th>
+            <th>Principal</th>
+          </tr>
+        </thead>
+        <tbody id="contactRows"><tr><td colspan="6">Cargando...</td></tr></tbody>
+      </table>
+    </section>`;
+
+  const res = await fetch("/api/contacts");
+  const items = await res.json();
+  const tbody = document.getElementById("contactRows");
+
+  tbody.innerHTML = items.length ? items.map(c => `
+    <tr class="clickable" onclick="goto('organization/${c.organizationId}')">
+      <td><strong>${esc(c.firstName + " " + c.lastName)}</strong></td>
+      <td>${esc(c.organization?.name || "—")}</td>
+      <td>${esc(c.jobTitle || "—")}</td>
+      <td>${esc(c.email || c.phoneWhatsapp || "—")}</td>
+      <td>${esc(c.preferredLanguage || "—")}</td>
+      <td>${c.isPrimary ? '<span class="pill">Sí</span>' : 'No'}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" class="empty">Todavía no hay contactos registrados.</td></tr>`;
+}
+
 
 async function dashboard(){
   setActive("dashboard");
@@ -236,7 +394,22 @@ async function organizationProfile(id){
         <div class="kv"><strong>Actuales</strong><span>${esc((o.currentMarkets||[]).join(", ")||"—")}</span></div>
         <div class="kv"><strong>Objetivo</strong><span>${esc((o.targetMarkets||[]).join(", ")||"—")}</span></div>
       `)}
-      ${section("Contactos",contacts.length?contacts.map(c=>`<div class="kv"><strong>${esc(c.firstName+" "+c.lastName)}</strong><span>${esc(c.jobTitle||"")}${c.isPrimary?' · Principal':''}<br><span class="muted">${esc(c.email||c.phoneWhatsapp||"")}</span></span></div>`).join(""):`<div class="empty">Todavía no hay contactos.</div>`)}
+      ${section("Contactos",`
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="primary" onclick="openContactCreate('${o.id}')">+ Añadir contacto</button>
+        </div>
+        ${contacts.length ? contacts.map(c=>`
+          <div class="kv">
+            <strong>${esc(c.firstName+" "+c.lastName)}${c.isPrimary?' · Principal':''}</strong>
+            <span>
+              ${esc(c.jobTitle||"—")}<br>
+              <span class="muted">${esc(c.email||"")}${c.email&&c.phoneWhatsapp?" · ":""}${esc(c.phoneWhatsapp||"")}</span><br>
+              <span class="muted">${esc(c.preferredLanguage||"")}</span><br>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick='openContactEdit(${JSON.stringify(c)})'>Editar</button>
+              <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="deleteContact('${c.id}')">Eliminar</button>
+            </span>
+          </div>`).join("") : `<div class="empty">Todavía no hay contactos.</div>`}
+      `)}
       ${section("Historial de interacciones",interactions.length?interactions.map(i=>`<div class="kv"><strong>${fmtDate(i.date)} · ${esc(i.type)}</strong><span>${esc(i.note)}</span></div>`).join(""):`<div class="empty">Todavía no hay interacciones.</div>`)}
     </div>
     <div class="stack">
@@ -259,6 +432,7 @@ async function route(){
   const h=(location.hash||"#dashboard").slice(1);
   if(h==="dashboard") return dashboard();
   if(h==="organizations") return organizations();
+  if(h==="contacts") return contactsPage();
   if(h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
   return dashboard();
 }

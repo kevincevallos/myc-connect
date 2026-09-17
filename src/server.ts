@@ -248,6 +248,140 @@ app.put("/api/organizations/:id", async (req, res) => {
   }
 });
 
+
+app.get("/api/contacts", async (_req, res) => {
+  try {
+    const contacts = await prisma.contact.findMany({
+      include: { organization: true },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }]
+    });
+    res.json(contacts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron cargar los contactos." });
+  }
+});
+
+app.post("/api/organizations/:organizationId/contacts", async (req, res) => {
+  try {
+    const organization = await prisma.organization.findUnique({
+      where: { id: req.params.organizationId }
+    });
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organización no encontrada." });
+    }
+
+    const {
+      firstName,
+      lastName,
+      jobTitle,
+      email,
+      phoneWhatsapp,
+      linkedin,
+      preferredLanguage,
+      notes,
+      isPrimary = false
+    } = req.body;
+
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: "Nombre y apellido son obligatorios." });
+    }
+
+    if (isPrimary) {
+      await prisma.contact.updateMany({
+        where: { organizationId: req.params.organizationId, isPrimary: true },
+        data: { isPrimary: false }
+      });
+    }
+
+    const contact = await prisma.contact.create({
+      data: {
+        organizationId: req.params.organizationId,
+        firstName,
+        lastName,
+        jobTitle: jobTitle || null,
+        email: email || null,
+        phoneWhatsapp: phoneWhatsapp || null,
+        linkedin: linkedin || null,
+        preferredLanguage: preferredLanguage || null,
+        notes: notes || null,
+        isPrimary: Boolean(isPrimary)
+      }
+    });
+
+    res.status(201).json(contact);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo crear el contacto." });
+  }
+});
+
+app.put("/api/contacts/:id", async (req, res) => {
+  try {
+    const existing = await prisma.contact.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Contacto no encontrado." });
+
+    const {
+      firstName,
+      lastName,
+      jobTitle,
+      email,
+      phoneWhatsapp,
+      linkedin,
+      preferredLanguage,
+      notes,
+      isPrimary = false
+    } = req.body;
+
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: "Nombre y apellido son obligatorios." });
+    }
+
+    if (isPrimary) {
+      await prisma.contact.updateMany({
+        where: {
+          organizationId: existing.organizationId,
+          isPrimary: true,
+          NOT: { id: existing.id }
+        },
+        data: { isPrimary: false }
+      });
+    }
+
+    const contact = await prisma.contact.update({
+      where: { id: req.params.id },
+      data: {
+        firstName,
+        lastName,
+        jobTitle: jobTitle || null,
+        email: email || null,
+        phoneWhatsapp: phoneWhatsapp || null,
+        linkedin: linkedin || null,
+        preferredLanguage: preferredLanguage || null,
+        notes: notes || null,
+        isPrimary: Boolean(isPrimary)
+      }
+    });
+
+    res.json(contact);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo actualizar el contacto." });
+  }
+});
+
+app.delete("/api/contacts/:id", async (req, res) => {
+  try {
+    await prisma.contact.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar el contacto." });
+  }
+});
+
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
