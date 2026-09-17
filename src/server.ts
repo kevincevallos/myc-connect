@@ -19,10 +19,13 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "MYC Connect API", version: "0.2.0" });
 });
 
+
 app.get("/api/dashboard", async (_req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
 
     const [
       totalOrganizations,
@@ -31,27 +34,109 @@ app.get("/api/dashboard", async (_req, res) => {
       openMatches,
       ecuadorToEurope,
       europeToEcuador,
-      followUpsDue
+      overdueFollowUps,
+      dueTodayFollowUps,
+      upcomingFollowUps,
+      clientsWon,
+      proposalsSent,
+      meetingsTotal,
+      recentOrganizations,
+      pipelineGroups,
+      sectorGroups,
+      countryGroups,
+      potentialGroups
     ] = await Promise.all([
       prisma.organization.count(),
       prisma.organization.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.opportunity.count({
-        where: { stage: { notIn: ["CLIENT", "CLOSED", "NOT_INTERESTED", "NOT_QUALIFIED"] } }
+        where: {
+          stage: {
+            notIn: ["CLIENT", "CLOSED", "NOT_INTERESTED", "NOT_QUALIFIED"]
+          }
+        }
       }),
       prisma.match.count({ where: { status: { not: "CLOSED" } } }),
       prisma.organization.count({ where: { direction: "ECUADOR_TO_EUROPE" } }),
       prisma.organization.count({ where: { direction: "EUROPE_TO_ECUADOR" } }),
-      prisma.task.count({ where: { completed: false, dueDate: { lte: now } } })
+      prisma.task.count({
+        where: {
+          completed: false,
+          dueDate: { lt: now }
+        }
+      }),
+      prisma.task.count({
+        where: {
+          completed: false,
+          dueDate: { gte: now, lte: endOfToday }
+        }
+      }),
+      prisma.task.count({
+        where: {
+          completed: false,
+          dueDate: { gt: endOfToday }
+        }
+      }),
+      prisma.organization.count({ where: { pipelineStage: "CLIENT" } }),
+      prisma.opportunity.count({
+        where: { stage: { in: ["PROPOSAL", "NEGOTIATION", "CLIENT"] } }
+      }),
+      prisma.interaction.count({ where: { type: "MEETING" } }),
+      prisma.organization.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 8
+      }),
+      prisma.organization.groupBy({
+        by: ["pipelineStage"],
+        _count: { _all: true }
+      }),
+      prisma.organization.groupBy({
+        by: ["sector"],
+        _count: { _all: true },
+        orderBy: { _count: { sector: "desc" } },
+        take: 6
+      }),
+      prisma.organization.groupBy({
+        by: ["country"],
+        _count: { _all: true },
+        orderBy: { _count: { country: "desc" } },
+        take: 6
+      }),
+      prisma.organization.groupBy({
+        by: ["strategicPotential"],
+        _count: { _all: true }
+      })
     ]);
 
     res.json({
       totalOrganizations,
       newLeadsThisMonth,
       activeOpportunities,
-      openMatches,
+      meetingsTotal,
+      proposalsSent,
+      clientsWon,
       ecuadorToEurope,
       europeToEcuador,
-      followUpsDue
+      openMatches,
+      overdueFollowUps,
+      dueTodayFollowUps,
+      upcomingFollowUps,
+      recentOrganizations,
+      pipeline: pipelineGroups.map(x => ({
+        stage: x.pipelineStage,
+        count: x._count._all
+      })),
+      topSectors: sectorGroups.map(x => ({
+        label: x.sector,
+        count: x._count._all
+      })),
+      topCountries: countryGroups.map(x => ({
+        label: x.country,
+        count: x._count._all
+      })),
+      strategicPotential: potentialGroups.map(x => ({
+        level: x.strategicPotential || "UNDEFINED",
+        count: x._count._all
+      }))
     });
   } catch (error) {
     console.error(error);
@@ -65,8 +150,12 @@ app.get("/api/organizations", async (req, res) => {
     const country = String(req.query.country || "").trim();
     const direction = String(req.query.direction || "").trim();
     const sector = String(req.query.sector || "").trim();
+    const need = String(req.query.need || "").trim();
+    const leadSource = String(req.query.leadSource || "").trim();
     const pipelineStage = String(req.query.pipelineStage || "").trim();
     const strategicPotential = String(req.query.strategicPotential || "").trim();
+    const followUpFrom = String(req.query.followUpFrom || "").trim();
+    const followUpTo = String(req.query.followUpTo || "").trim();
 
     const where: any = {};
 
@@ -77,26 +166,70 @@ app.get("/api/organizations", async (req, res) => {
         { cityRegion: { contains: q, mode: "insensitive" } },
         { sector: { contains: q, mode: "insensitive" } },
         { subsector: { contains: q, mode: "insensitive" } },
-        { offerSummary: { contains: q, mode: "insensitive" } }
+        { offerSummary: { contains: q, mode: "insensitive" } },
+        { leadSource: { contains: q, mode: "insensitive" } },
+        { nextAction: { contains: q, mode: "insensitive" } }
       ];
     }
 
     if (country) where.country = { equals: country, mode: "insensitive" };
     if (direction) where.direction = direction;
     if (sector) where.sector = { equals: sector, mode: "insensitive" };
+    if (need) where.needs = { has: need };
+    if (leadSource) where.leadSource = { equals: leadSource, mode: "insensitive" };
     if (pipelineStage) where.pipelineStage = pipelineStage;
     if (strategicPotential) where.strategicPotential = strategicPotential;
 
+    if (followUpFrom || followUpTo) {
+      where.nextActionDate = {};
+      if (followUpFrom) where.nextActionDate.gte = new Date(followUpFrom);
+      if (followUpTo) {
+        const to = new Date(followUpTo);
+        to.setHours(23, 59, 59, 999);
+        where.nextActionDate.lte = to;
+      }
+    }
+
     const items = await prisma.organization.findMany({
       where,
-      orderBy: { createdAt: "desc" },
-      take: 250
+      orderBy: [
+        { nextActionDate: "asc" },
+        { createdAt: "desc" }
+      ],
+      take: 500
     });
 
     res.json(items);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "No se pudieron cargar las organizaciones." });
+  }
+});
+
+app.get("/api/organizations/filter-options", async (_req, res) => {
+  try {
+    const organizations = await prisma.organization.findMany({
+      select: {
+        country: true,
+        sector: true,
+        needs: true,
+        leadSource: true
+      }
+    });
+
+    const unique = (values: string[]) =>
+      [...new Set(values.filter(Boolean).map(v => v.trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+
+    res.json({
+      countries: unique(organizations.map(x => x.country)),
+      sectors: unique(organizations.map(x => x.sector)),
+      needs: unique(organizations.flatMap(x => x.needs || [])),
+      leadSources: unique(organizations.map(x => x.leadSource || ""))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron cargar las opciones de filtros." });
   }
 });
 

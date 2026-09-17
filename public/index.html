@@ -63,12 +63,33 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
 .task-actions{display:flex;gap:6px;flex-wrap:wrap}
 </style>
 
+
+<style id="dashboard-v08">
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.metric-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
+.metric-card .metric-label{font-size:12px;color:var(--muted);margin-bottom:7px}
+.metric-card .metric-value{font-size:28px;font-weight:800;color:var(--blue)}
+.metric-card.alert .metric-value{color:var(--red)}
+.dashboard-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px}
+.mini-list{display:grid;gap:9px}
+.mini-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.mini-bar{height:8px;background:#edf1f4;border-radius:999px;overflow:hidden;margin-top:4px}
+.mini-fill{height:100%;background:var(--blue);border-radius:999px}
+.dashboard-actions{display:flex;gap:8px;flex-wrap:wrap}
+.filter-advanced{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.filter-advanced .wide{grid-column:span 2}
+.filter-advanced input,.filter-advanced select{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:8px;font:inherit;background:#fff}
+.filter-summary{font-size:13px;color:var(--muted);margin:8px 0 14px}
+@media(max-width:1100px){.metric-grid{grid-template-columns:repeat(3,1fr)}.dashboard-grid{grid-template-columns:1fr}.filter-advanced{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.metric-grid{grid-template-columns:repeat(2,1fr)}.filter-advanced{grid-template-columns:1fr}.filter-advanced .wide{grid-column:auto}}
+</style>
+
 </head>
 <body>
 <div class="layout">
 <aside>
   <div class="brand">MYC Connect</div>
-  <div class="subtitle">Business Matching CRM</div>
+  <div class="subtitle">Business Matching CRM · v0.8</div>
   <nav>
     <a data-route="dashboard">Dashboard</a>
     <a data-route="organizations">Organizaciones</a>
@@ -1062,16 +1083,125 @@ async function tasksPage(status = ""){
 
 async function dashboard(){
   setActive("dashboard");
-  app.innerHTML=`<div class="top"><div><h1>Dashboard</h1><small>Resumen comercial de Mishki Yaku Collective</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
-  <section class="cards">
-    ${["totalOrganizations","newLeadsThisMonth","activeOpportunities","openMatches","ecuadorToEurope","europeToEcuador","followUpsDue"].map(k=>`<div class="card"><div class="label">${({totalOrganizations:"Total organizaciones",newLeadsThisMonth:"Nuevos leads este mes",activeOpportunities:"Oportunidades activas",openMatches:"Matches abiertos",ecuadorToEurope:"Ecuador → Europa",europeToEcuador:"Europa → Ecuador",followUpsDue:"Follow-ups vencidos"})[k]}</div><div class="value" id="${k}">0</div></div>`).join("")}
-  </section>
-  <section class="panel"><h2>Organizaciones recientes</h2><table><thead><tr><th>Organización</th><th>País</th><th>Sector</th><th>Dirección</th><th>Pipeline</th></tr></thead><tbody id="recent"><tr><td colspan="5">Cargando...</td></tr></tbody></table></section>`;
-  const [dres,ores]=await Promise.all([fetch("/api/dashboard"),fetch("/api/organizations")]);
-  const d=await dres.json(), orgs=await ores.json();
-  Object.entries(d).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.textContent=v});
-  const tbody=document.getElementById("recent");
-  tbody.innerHTML=orgs.length?orgs.slice(0,8).map(o=>row(o)).join(""):`<tr><td colspan="5">Todavía no hay organizaciones registradas.</td></tr>`;
+  app.innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Dashboard</h1>
+        <small>Resumen comercial y prioridades de Mishki Yaku Collective</small>
+      </div>
+      <div class="dashboard-actions">
+        <button class="secondary" onclick="goto('tasks')">Ver seguimientos</button>
+        <button class="secondary" onclick="goto('matches')">Ver matches</button>
+        <button class="primary" onclick="openCreate()">+ Registrar organización</button>
+      </div>
+    </div>
+
+    <section class="metric-grid">
+      <div class="metric-card"><div class="metric-label">Total organizaciones</div><div class="metric-value" id="mTotal">—</div></div>
+      <div class="metric-card"><div class="metric-label">Nuevos leads este mes</div><div class="metric-value" id="mNew">—</div></div>
+      <div class="metric-card"><div class="metric-label">Oportunidades activas</div><div class="metric-value" id="mOpps">—</div></div>
+      <div class="metric-card"><div class="metric-label">Reuniones registradas</div><div class="metric-value" id="mMeetings">—</div></div>
+
+      <div class="metric-card"><div class="metric-label">Propuestas / negociación</div><div class="metric-value" id="mProposals">—</div></div>
+      <div class="metric-card"><div class="metric-label">Clientes ganados</div><div class="metric-value" id="mClients">—</div></div>
+      <div class="metric-card"><div class="metric-label">Matches abiertos</div><div class="metric-value" id="mMatches">—</div></div>
+      <div class="metric-card alert"><div class="metric-label">Seguimientos vencidos</div><div class="metric-value" id="mOverdue">—</div></div>
+
+      <div class="metric-card"><div class="metric-label">Ecuador → Europa</div><div class="metric-value" id="mEcuEu">—</div></div>
+      <div class="metric-card"><div class="metric-label">Europa → Ecuador</div><div class="metric-value" id="mEuEcu">—</div></div>
+      <div class="metric-card"><div class="metric-label">Vencen hoy</div><div class="metric-value" id="mToday">—</div></div>
+      <div class="metric-card"><div class="metric-label">Próximos seguimientos</div><div class="metric-value" id="mUpcoming">—</div></div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="panel">
+        <h2>Pipeline comercial</h2>
+        <div id="pipelineSummary" class="mini-list"></div>
+      </div>
+      <div class="panel">
+        <h2>Potencial estratégico</h2>
+        <div id="potentialSummary" class="mini-list"></div>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="panel">
+        <h2>Sectores principales</h2>
+        <div id="sectorSummary" class="mini-list"></div>
+      </div>
+      <div class="panel">
+        <h2>Países principales</h2>
+        <div id="countrySummary" class="mini-list"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Organizaciones recientes</h2>
+      <table>
+        <thead>
+          <tr><th>Organización</th><th>País</th><th>Sector</th><th>Dirección</th><th>Pipeline</th><th>Próxima acción</th></tr>
+        </thead>
+        <tbody id="recent"><tr><td colspan="6">Cargando...</td></tr></tbody>
+      </table>
+    </section>`;
+
+  const res = await fetch("/api/dashboard");
+  const d = await res.json();
+
+  if (!res.ok) {
+    app.innerHTML = `<section class="panel">No se pudo cargar el dashboard.</section>`;
+    return;
+  }
+
+  document.getElementById("mTotal").textContent = d.totalOrganizations;
+  document.getElementById("mNew").textContent = d.newLeadsThisMonth;
+  document.getElementById("mOpps").textContent = d.activeOpportunities;
+  document.getElementById("mMeetings").textContent = d.meetingsTotal;
+  document.getElementById("mProposals").textContent = d.proposalsSent;
+  document.getElementById("mClients").textContent = d.clientsWon;
+  document.getElementById("mMatches").textContent = d.openMatches;
+  document.getElementById("mOverdue").textContent = d.overdueFollowUps;
+  document.getElementById("mEcuEu").textContent = d.ecuadorToEurope;
+  document.getElementById("mEuEcu").textContent = d.europeToEcuador;
+  document.getElementById("mToday").textContent = d.dueTodayFollowUps;
+  document.getElementById("mUpcoming").textContent = d.upcomingFollowUps;
+
+  function renderBars(targetId, rows, labelFn){
+    const target = document.getElementById(targetId);
+    if (!rows || !rows.length) {
+      target.innerHTML = `<div class="empty">Sin datos todavía.</div>`;
+      return;
+    }
+    const max = Math.max(...rows.map(x => x.count), 1);
+    target.innerHTML = rows.map(x => `
+      <div class="mini-row">
+        <div>
+          <div>${esc(labelFn(x))}</div>
+          <div class="mini-bar"><div class="mini-fill" style="width:${Math.max(5, Math.round((x.count/max)*100))}%"></div></div>
+        </div>
+        <strong>${x.count}</strong>
+      </div>`).join("");
+  }
+
+  renderBars("pipelineSummary", d.pipeline || [], x => pipelineLabels[x.stage] || x.stage);
+  renderBars("sectorSummary", d.topSectors || [], x => x.label);
+  renderBars("countrySummary", d.topCountries || [], x => x.label);
+  renderBars("potentialSummary", d.strategicPotential || [], x => ({
+    HIGH:"Alto", MEDIUM:"Medio", LOW:"Bajo", UNDEFINED:"Sin definir"
+  }[x.level] || x.level));
+
+  const tbody = document.getElementById("recent");
+  tbody.innerHTML = d.recentOrganizations?.length
+    ? d.recentOrganizations.map(o => `
+      <tr class="clickable" onclick="goto('organization/${o.id}')">
+        <td><strong>${esc(o.name)}</strong></td>
+        <td>${esc(o.country)}</td>
+        <td>${esc(o.sector)}</td>
+        <td>${esc(labels[o.direction]||o.direction)}</td>
+        <td><span class="pill">${esc((pipelineLabels[o.pipelineStage]||o.pipelineStage))}</span></td>
+        <td>${esc(o.nextAction || "—")}${o.nextActionDate ? `<br><span class="muted">${fmtDate(o.nextActionDate)}</span>` : ""}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="6">Todavía no hay organizaciones registradas.</td></tr>`;
 }
 
 function row(o){
@@ -1080,29 +1210,166 @@ function row(o){
 
 async function organizations(){
   setActive("organizations");
-  app.innerHTML=`<div class="top"><div><h1>Organizaciones</h1><small>Empresas, instituciones y prospectos Ecuador ↔ Europa</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
-  <section class="panel">
-    <div class="filters">
-      <input id="q" placeholder="Buscar nombre, país, ciudad, sector..." />
-      <select id="direction"><option value="">Todas las direcciones</option><option value="ECUADOR_TO_EUROPE">Ecuador → Europa</option><option value="EUROPE_TO_ECUADOR">Europa → Ecuador</option><option value="SCIENCE_INNOVATION">Science & Innovation</option></select>
-      <select id="potential"><option value="">Todo potencial</option><option value="HIGH">Alto</option><option value="MEDIUM">Medio</option><option value="LOW">Bajo</option></select>
-      <select id="stage"><option value="">Todo pipeline</option>${["IDENTIFIED","CONTACTED","RESPONDED","MEETING","QUALIFIED_OPPORTUNITY","PROPOSAL","NEGOTIATION","CLIENT","CLOSED","ON_HOLD"].map(x=>`<option value="${x}">${x.replaceAll("_"," ")}</option>`).join("")}</select>
-      <button class="secondary" id="clear">Limpiar</button>
+  app.innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Organizaciones</h1>
+        <small>Empresas, instituciones y prospectos Ecuador ↔ Europa</small>
+      </div>
+      <button class="primary" onclick="openCreate()">+ Registrar organización</button>
     </div>
-    <div id="resultCount" class="muted" style="margin-bottom:10px"></div>
-    <table><thead><tr><th>Organización</th><th>País</th><th>Sector</th><th>Dirección</th><th>Potencial</th><th>Pipeline</th></tr></thead><tbody id="orgRows"><tr><td colspan="6">Cargando...</td></tr></tbody></table>
-  </section>`;
-  const q=document.getElementById("q"),direction=document.getElementById("direction"),potential=document.getElementById("potential"),stage=document.getElementById("stage");
+
+    <section class="panel">
+      <div class="filter-advanced">
+        <input class="wide" id="q" placeholder="Buscar nombre, país, ciudad, sector, oferta, fuente o próxima acción..." />
+
+        <select id="country"><option value="">Todos los países</option></select>
+        <select id="direction">
+          <option value="">Todas las direcciones</option>
+          <option value="ECUADOR_TO_EUROPE">Ecuador → Europa</option>
+          <option value="EUROPE_TO_ECUADOR">Europa → Ecuador</option>
+          <option value="SCIENCE_INNOVATION">Science & Innovation</option>
+        </select>
+
+        <select id="sector"><option value="">Todos los sectores</option></select>
+        <select id="need"><option value="">Todas las necesidades</option></select>
+
+        <select id="potential">
+          <option value="">Todo potencial</option>
+          <option value="HIGH">Alto</option>
+          <option value="MEDIUM">Medio</option>
+          <option value="LOW">Bajo</option>
+        </select>
+
+        <select id="stage">
+          <option value="">Todo pipeline</option>
+          ${["IDENTIFIED","CONTACTED","RESPONDED","MEETING","QUALIFIED_OPPORTUNITY","PROPOSAL","NEGOTIATION","CLIENT","CLOSED","NOT_INTERESTED","NOT_QUALIFIED","ON_HOLD"].map(x=>`<option value="${x}">${pipelineLabels[x]||x}</option>`).join("")}
+        </select>
+
+        <select id="leadSource"><option value="">Todas las fuentes</option></select>
+
+        <div>
+          <label>Seguimiento desde</label>
+          <input type="date" id="followUpFrom" />
+        </div>
+        <div>
+          <label>Seguimiento hasta</label>
+          <input type="date" id="followUpTo" />
+        </div>
+
+        <button class="secondary" id="clearFilters">Limpiar filtros</button>
+      </div>
+
+      <div id="resultCount" class="filter-summary"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Organización</th>
+            <th>País</th>
+            <th>Sector</th>
+            <th>Dirección</th>
+            <th>Potencial</th>
+            <th>Pipeline</th>
+            <th>Próxima acción</th>
+          </tr>
+        </thead>
+        <tbody id="orgRows"><tr><td colspan="7">Cargando...</td></tr></tbody>
+      </table>
+    </section>`;
+
+  const q=document.getElementById("q");
+  const country=document.getElementById("country");
+  const direction=document.getElementById("direction");
+  const sector=document.getElementById("sector");
+  const need=document.getElementById("need");
+  const potential=document.getElementById("potential");
+  const stage=document.getElementById("stage");
+  const leadSource=document.getElementById("leadSource");
+  const followUpFrom=document.getElementById("followUpFrom");
+  const followUpTo=document.getElementById("followUpTo");
+
+  const optionsRes = await fetch("/api/organizations/filter-options");
+  const options = await optionsRes.json();
+
+  function fillSelect(el, values){
+    values.forEach(v => {
+      const op = document.createElement("option");
+      op.value = v;
+      op.textContent = v;
+      el.appendChild(op);
+    });
+  }
+
+  if (optionsRes.ok) {
+    fillSelect(country, options.countries || []);
+    fillSelect(sector, options.sectors || []);
+    fillSelect(need, options.needs || []);
+    fillSelect(leadSource, options.leadSources || []);
+  }
+
   let timer;
   async function load(){
     const p=new URLSearchParams();
-    if(q.value)p.set("q",q.value); if(direction.value)p.set("direction",direction.value); if(potential.value)p.set("strategicPotential",potential.value); if(stage.value)p.set("pipelineStage",stage.value);
-    const res=await fetch("/api/organizations?"+p.toString()); const items=await res.json();
-    document.getElementById("resultCount").textContent=`${items.length} organización(es)`;
-    document.getElementById("orgRows").innerHTML=items.length?items.map(o=>`<tr class="clickable" onclick="goto('organization/${o.id}')"><td><strong>${esc(o.name)}</strong></td><td>${esc(o.country)}</td><td>${esc(o.sector)}</td><td>${esc(labels[o.direction]||o.direction)}</td><td>${esc(labels[o.strategicPotential]||"—")}</td><td><span class="pill">${esc(o.pipelineStage.replaceAll("_"," "))}</span></td></tr>`).join(""):`<tr><td colspan="6" class="empty">No hay resultados con estos filtros.</td></tr>`;
+    if(q.value)p.set("q",q.value);
+    if(country.value)p.set("country",country.value);
+    if(direction.value)p.set("direction",direction.value);
+    if(sector.value)p.set("sector",sector.value);
+    if(need.value)p.set("need",need.value);
+    if(potential.value)p.set("strategicPotential",potential.value);
+    if(stage.value)p.set("pipelineStage",stage.value);
+    if(leadSource.value)p.set("leadSource",leadSource.value);
+    if(followUpFrom.value)p.set("followUpFrom",followUpFrom.value);
+    if(followUpTo.value)p.set("followUpTo",followUpTo.value);
+
+    const res=await fetch("/api/organizations?"+p.toString());
+    const items=await res.json();
+
+    if(!res.ok){
+      document.getElementById("orgRows").innerHTML=`<tr><td colspan="7">No se pudieron cargar los resultados.</td></tr>`;
+      return;
+    }
+
+    const activeFilters = [
+      q.value,country.value,direction.value,sector.value,need.value,potential.value,
+      stage.value,leadSource.value,followUpFrom.value,followUpTo.value
+    ].filter(Boolean).length;
+
+    document.getElementById("resultCount").textContent =
+      `${items.length} organización(es) encontradas${activeFilters ? ` · ${activeFilters} filtro(s) activo(s)` : ""}`;
+
+    document.getElementById("orgRows").innerHTML = items.length
+      ? items.map(o=>`
+        <tr class="clickable" onclick="goto('organization/${o.id}')">
+          <td><strong>${esc(o.name)}</strong></td>
+          <td>${esc(o.country)}</td>
+          <td>${esc(o.sector)}</td>
+          <td>${esc(labels[o.direction]||o.direction)}</td>
+          <td>${esc(labels[o.strategicPotential]||"—")}</td>
+          <td><span class="pill">${esc(pipelineLabels[o.pipelineStage]||o.pipelineStage)}</span></td>
+          <td>${esc(o.nextAction||"—")}${o.nextActionDate?`<br><span class="muted">${fmtDate(o.nextActionDate)}</span>`:""}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="7" class="empty">No hay resultados con estos filtros.</td></tr>`;
   }
-  q.oninput=()=>{clearTimeout(timer);timer=setTimeout(load,250)}; [direction,potential,stage].forEach(x=>x.onchange=load);
-  document.getElementById("clear").onclick=()=>{q.value="";direction.value="";potential.value="";stage.value="";load()}; load();
+
+  q.oninput=()=>{clearTimeout(timer);timer=setTimeout(load,250)};
+  [country,direction,sector,need,potential,stage,leadSource,followUpFrom,followUpTo].forEach(x=>x.onchange=load);
+
+  document.getElementById("clearFilters").onclick=()=>{
+    q.value="";
+    country.value="";
+    direction.value="";
+    sector.value="";
+    need.value="";
+    potential.value="";
+    stage.value="";
+    leadSource.value="";
+    followUpFrom.value="";
+    followUpTo.value="";
+    load();
+  };
+
+  load();
 }
 
 function section(title, body){return `<section class="panel"><h2>${title}</h2>${body}</section>`}
