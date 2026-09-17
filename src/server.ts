@@ -4,6 +4,9 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { prisma } from "./lib/prisma.js";
+import crypto from "node:crypto";
+import { promisify } from "node:util";
+
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -13,11 +16,170 @@ app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, "../public")));
+app.use("/assets", express.static(path.join(__dirname, "../public/assets")));
+
+const scryptAsync = promisify(crypto.scrypt);
+const SESSION_COOKIE = "myc_session";
+
+function getAuthSecret() {
+  const value = process.env.AUTH_SECRET;
+  if (!value || value.length < 32) {
+    throw new Error("AUTH_SECRET debe existir y tener al menos 32 caracteres.");
+  }
+  return value;
+}
+
+async function hashPassword(password: string) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `scrypt$${salt}$${derived.toString("hex")}`;
+}
+
+async function verifyPassword(password: string, stored: string) {
+  const [method, salt, hashHex] = stored.split("$");
+  if (method !== "scrypt" || !salt || !hashHex) return false;
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const storedBuffer = Buffer.from(hashHex, "hex");
+  if (storedBuffer.length !== derived.length) return false;
+  return crypto.timingSafeEqual(storedBuffer, derived);
+}
+
+function signSession(userId: string) {
+  const payload = Buffer.from(JSON.stringify({
+    userId,
+    exp: Date.now() + 12 * 60 * 60 * 1000
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", getAuthSecret()).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function readCookie(req: express.Request, name: string) {
+  const raw = req.headers.cookie || "";
+  const parts = raw.split(";").map(x => x.trim());
+  for (const part of parts) {
+    const i = part.indexOf("=");
+    if (i === -1) continue;
+    if (part.slice(0, i) === name) return decodeURIComponent(part.slice(i + 1));
+  }
+  return null;
+}
+
+function verifySessionToken(token: string | null) {
+  if (!token) return null;
+  try {
+    const [payload, signature] = token.split(".");
+    if (!payload || !signature) return null;
+    const expected = crypto.createHmac("sha256", getAuthSecret()).update(payload).digest("base64url");
+    const a = Buffer.from(signature);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!data.userId || !data.exp || Date.now() > data.exp) return null;
+    return data as { userId: string; exp: number };
+  } catch {
+    return null;
+  }
+}
+
+async function currentUser(req: express.Request) {
+  const session = verifySessionToken(readCookie(req, SESSION_COOKIE));
+  if (!session) return null;
+  return prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, name: true, email: true, role: true }
+  });
+}
+
+async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const user = await currentUser(req);
+  if (!user) return res.status(401).json({ error: "Sesión no válida o expirada." });
+  res.locals.user = user;
+  next();
+}
+
+async function ensureBootstrapAdmin() {
+  const email = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "";
+  const name = (process.env.ADMIN_NAME || "MYC Admin").trim();
+
+  if (!email || !password) {
+    console.warn("ADMIN_EMAIL / ADMIN_PASSWORD no configurados. No se creará usuario inicial.");
+    return;
+  }
+  if (password.length < 10) {
+    throw new Error("ADMIN_PASSWORD debe tener al menos 10 caracteres.");
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!existing) {
+    await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash: await hashPassword(password),
+        role: "ADMIN"
+      }
+    });
+    console.log(`Usuario administrador inicial creado: ${email}`);
+  }
+}
+
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "MYC Connect API", version: "0.2.0" });
+  res.json({ ok: true, service: "MYC Connect API", version: "0.9.0" });
 });
+
+app.get("/login", async (req, res) => {
+  const user = await currentUser(req);
+  if (user) return res.redirect("/");
+  res.sendFile(path.join(__dirname, "../public/login.html"));
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email y contraseña son obligatorios." });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      return res.status(401).json({ error: "Credenciales incorrectas." });
+    }
+
+    const token = signSession(user.id);
+    const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+    res.setHeader(
+      "Set-Cookie",
+      `${SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=43200; SameSite=Lax${secure}`
+    );
+
+    res.json({
+      ok: true,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo iniciar sesión." });
+  }
+});
+
+app.post("/api/auth/logout", (_req, res) => {
+  res.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure`
+  );
+  res.json({ ok: true });
+});
+
+app.get("/api/auth/me", requireAuth, (_req, res) => {
+  res.json(res.locals.user);
+});
+
+app.use("/api", requireAuth);
+
 
 
 app.get("/api/dashboard", async (_req, res) => {
@@ -1118,10 +1280,34 @@ app.delete("/api/tasks/:id", async (req, res) => {
 });
 
 
-app.use((_req, res) => {
+
+app.get("/", async (req, res) => {
+  const user = await currentUser(req);
+  if (!user) return res.redirect("/login");
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`MYC Connect funcionando en http://localhost:${PORT}`);
+app.get("/index.html", async (req, res) => {
+  const user = await currentUser(req);
+  if (!user) return res.redirect("/login");
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
+
+app.use((_req, res) => {
+  res.redirect("/");
+});
+
+async function start() {
+  getAuthSecret();
+  await ensureBootstrapAdmin();
+
+  app.listen(PORT, () => {
+    console.log(`MYC Connect funcionando en http://localhost:${PORT}`);
+  });
+}
+
+start().catch(error => {
+  console.error("No se pudo iniciar MYC Connect:", error);
+  process.exit(1);
+});
+

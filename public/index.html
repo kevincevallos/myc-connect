@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MYC Connect</title>
+<title>MYC Connect · Mishki Yaku Collective</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <style>
 :root{--blue:#2B557E;--brown:#815747;--cream:#F3EADD;--green:#0E4F43;--red:#C62700;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--bg:#f7f8fa}
 *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
@@ -88,8 +89,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
 <body>
 <div class="layout">
 <aside>
-  <div class="brand">MYC Connect</div>
-  <div class="subtitle">Business Matching CRM · v0.8</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><img src="/assets/myc-logo.svg" alt="Mishki Yaku Collective" style="width:42px;height:42px;border-radius:10px"><div><div class="brand" style="margin:0">MYC Connect</div><div class="subtitle" style="margin:2px 0 0">Business Matching CRM · v0.9</div></div></div>
   <nav>
     <a data-route="dashboard">Dashboard</a>
     <a data-route="organizations">Organizaciones</a>
@@ -98,6 +98,10 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
     <a data-route="matches">Matches</a>
     <a data-route="tasks">Seguimientos</a>
   </nav>
+  <div style="position:absolute;left:18px;right:18px;bottom:22px;border-top:1px solid var(--border);padding-top:14px">
+    <div id="sessionUser" style="font-size:12px;color:var(--muted);margin-bottom:8px">Sesión activa</div>
+    <button class="secondary" style="width:100%" onclick="logout()">Cerrar sesión</button>
+  </div>
 </aside>
 <main id="app"></main>
 </div>
@@ -394,7 +398,40 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
   </div>
 </div>
 
+
 <script>
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const response = await nativeFetch(...args);
+  if (response.status === 401) {
+    window.location.href = "/login";
+    throw new Error("Sesión expirada.");
+  }
+  return response;
+};
+
+async function loadSessionUser(){
+  try {
+    const res = await nativeFetch("/api/auth/me");
+    if (!res.ok) {
+      window.location.href = "/login";
+      return;
+    }
+    const user = await res.json();
+    const el = document.getElementById("sessionUser");
+    if (el) el.textContent = `${user.name} · ${user.role}`;
+  } catch {
+    window.location.href = "/login";
+  }
+}
+
+async function logout(){
+  await nativeFetch("/api/auth/logout", { method: "POST" });
+  window.location.href = "/login";
+}
+
+loadSessionUser();
+
 const app = document.getElementById("app");
 const modal = document.getElementById("organizationModal");
 const form = document.getElementById("organizationForm");
