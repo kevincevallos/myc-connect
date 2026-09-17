@@ -1,569 +1,1146 @@
 <!doctype html>
 <html lang="es">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MYC Connect · Mishki Yaku Collective</title>
-<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<style>
-:root{--blue:#2B557E;--brown:#815747;--cream:#F3EADD;--green:#0E4F43;--red:#C62700;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--bg:#f7f8fa}
-*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
-aside{background:#fff;border-right:1px solid var(--border);padding:26px 18px;position:sticky;top:0;height:100vh}
-.brand{font-weight:800;color:var(--blue);font-size:22px;margin-bottom:4px}.subtitle{color:var(--muted);font-size:12px;margin-bottom:30px}
-nav a{display:block;text-decoration:none;color:var(--text);padding:11px 12px;border-radius:9px;margin:4px 0;cursor:pointer}
-nav a.active,nav a:hover{background:var(--cream);color:var(--blue);font-weight:700}
-main{padding:28px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
-h1{margin:0;font-size:28px}h2{margin:0 0 14px}.top small,.muted{color:var(--muted)}
-button{border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:700}.primary{background:var(--blue);color:#fff}.secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:14px;margin-bottom:22px}.card,.panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
-.card .label{color:var(--muted);font-size:13px}.card .value{font-size:30px;font-weight:800;margin-top:8px;color:var(--blue)}
-table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--border);font-size:14px}th{color:var(--muted);font-size:12px;text-transform:uppercase}
-tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
-.pill{display:inline-block;padding:5px 8px;border-radius:999px;background:var(--cream);color:var(--brown);font-size:12px;font-weight:700}
-.filters{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:10px;margin-bottom:16px}.filters input,.filters select,.grid input,.grid select,.grid textarea{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:8px;font:inherit}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--muted)}textarea{min-height:90px;resize:vertical}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.open{display:flex}.modal-box{background:#fff;width:min(820px,100%);max-height:92vh;overflow:auto;border-radius:16px;padding:22px}
-.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.notice{margin:12px 0 0;font-size:13px}
-.profile-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.profile-title{font-size:30px;font-weight:800}.profile-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.stack{display:grid;gap:16px}.kv{display:grid;grid-template-columns:150px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}.tags{display:flex;gap:7px;flex-wrap:wrap}.tag{padding:6px 9px;border-radius:999px;background:#eef3f7;color:var(--blue);font-size:12px}
-.empty{padding:24px;text-align:center;color:var(--muted)}.link{color:var(--blue);text-decoration:none}.back{margin-bottom:15px;display:inline-block;color:var(--blue);cursor:pointer;font-weight:700}
-@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr}}
-@media(max-width:760px){.layout{grid-template-columns:1fr}aside{display:none}.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.full{grid-column:auto}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MYC Connect · Mishki Yaku Collective</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon-myc.png" />
+  <style>
+    :root {
+      --blue: #2B557E;
+      --brown: #815747;
+      --cream: #F3EADD;
+      --green: #0E4F43;
+      --red: #C62700;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f7f8fa
+    }
 
-<style id="pipeline-extra">
-.pipeline-board{display:grid;grid-template-columns:repeat(8,minmax(230px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
-.pipeline-col{background:#f3f5f7;border:1px solid var(--border);border-radius:14px;padding:12px;min-height:360px}
-.pipeline-col h3{font-size:14px;margin:0 0 10px;color:var(--blue)}
-.opp-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
-.opp-card strong{display:block;margin-bottom:5px}
-.opp-card .org{font-size:12px;color:var(--muted);margin-bottom:8px}
-.opp-card select{width:100%;padding:7px;border:1px solid var(--border);border-radius:8px}
-</style>
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh
+    }
+
+    aside {
+      background: #fff;
+      border-right: 1px solid var(--border);
+      padding: 26px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh
+    }
+
+    .brand {
+      font-weight: 800;
+      color: var(--blue);
+      font-size: 22px;
+      margin-bottom: 4px
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 30px
+    }
+
+    nav a {
+      display: block;
+      text-decoration: none;
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 9px;
+      margin: 4px 0;
+      cursor: pointer
+    }
+
+    nav a.active,
+    nav a:hover {
+      background: var(--cream);
+      color: var(--blue);
+      font-weight: 700
+    }
+
+    main {
+      padding: 28px
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px
+    }
+
+    h2 {
+      margin: 0 0 14px
+    }
+
+    .top small,
+    .muted {
+      color: var(--muted)
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-weight: 700
+    }
+
+    .primary {
+      background: var(--blue);
+      color: #fff
+    }
+
+    .secondary {
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text)
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px
+    }
+
+    .card,
+    .panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px
+    }
+
+    .card .label {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .card .value {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 8px;
+      color: var(--blue)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase
+    }
+
+    tr.clickable {
+      cursor: pointer
+    }
+
+    tr.clickable:hover {
+      background: #fafafa
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--cream);
+      color: var(--brown);
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .filters input,
+    .filters select,
+    .grid input,
+    .grid select,
+    .grid textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: inherit
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px
+    }
+
+    .full {
+      grid-column: 1/-1
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--muted)
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .38);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10
+    }
+
+    .modal.open {
+      display: flex
+    }
+
+    .modal-box {
+      background: #fff;
+      width: min(820px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      border-radius: 16px;
+      padding: 22px
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px
+    }
+
+    .notice {
+      margin: 12px 0 0;
+      font-size: 13px
+    }
+
+    .profile-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px
+    }
+
+    .profile-title {
+      font-size: 30px;
+      font-weight: 800
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .tags {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap
+    }
+
+    .tag {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #eef3f7;
+      color: var(--blue);
+      font-size: 12px
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted)
+    }
+
+    .link {
+      color: var(--blue);
+      text-decoration: none
+    }
+
+    .back {
+      margin-bottom: 15px;
+      display: inline-block;
+      color: var(--blue);
+      cursor: pointer;
+      font-weight: 700
+    }
+
+    @media(max-width:1000px) {
+      .cards {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .filters {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .profile-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media(max-width:760px) {
+      .layout {
+        grid-template-columns: 1fr
+      }
+
+      aside {
+        display: none
+      }
+
+      .grid {
+        grid-template-columns: 1fr
+      }
+
+      .cards {
+        grid-template-columns: 1fr
+      }
+
+      .filters {
+        grid-template-columns: 1fr
+      }
+
+      .full {
+        grid-column: auto
+      }
+    }
+  </style>
+
+  <style id="pipeline-extra">
+    .pipeline-board {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(230px, 1fr));
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px
+    }
+
+    .pipeline-col {
+      background: #f3f5f7;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 360px
+    }
+
+    .pipeline-col h3 {
+      font-size: 14px;
+      margin: 0 0 10px;
+      color: var(--blue)
+    }
+
+    .opp-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px
+    }
+
+    .opp-card strong {
+      display: block;
+      margin-bottom: 5px
+    }
+
+    .opp-card .org {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px
+    }
+
+    .opp-card select {
+      width: 100%;
+      padding: 7px;
+      border: 1px solid var(--border);
+      border-radius: 8px
+    }
+  </style>
 
 
-<style id="matches-extra">
-.match-grid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px}
-.match-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
-.match-pair{font-size:16px;font-weight:800;color:var(--blue);margin-bottom:8px}
-.match-arrow{color:var(--muted);padding:0 6px}
-.match-meta{font-size:13px;color:var(--muted);margin:6px 0}
-.match-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-@media(max-width:760px){.match-grid{grid-template-columns:1fr}}
-</style>
+  <style id="matches-extra">
+    .match-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 14px
+    }
+
+    .match-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px
+    }
+
+    .match-pair {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--blue);
+      margin-bottom: 8px
+    }
+
+    .match-arrow {
+      color: var(--muted);
+      padding: 0 6px
+    }
+
+    .match-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 6px 0
+    }
+
+    .match-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap
+    }
+
+    @media(max-width:760px) {
+      .match-grid {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
 
 
-<style id="tasks-extra">
-.task-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.task-toolbar button.active{background:var(--blue);color:#fff}
-.task-row.overdue{background:#fff7f6}
-.task-status{font-size:12px;font-weight:700}
-.task-status.overdue{color:var(--red)}
-.task-status.pending{color:var(--brown)}
-.task-status.completed{color:var(--green)}
-.task-actions{display:flex;gap:6px;flex-wrap:wrap}
-</style>
+  <style id="tasks-extra">
+    .task-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px
+    }
+
+    .task-toolbar button.active {
+      background: var(--blue);
+      color: #fff
+    }
+
+    .task-row.overdue {
+      background: #fff7f6
+    }
+
+    .task-status {
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .task-status.overdue {
+      color: var(--red)
+    }
+
+    .task-status.pending {
+      color: var(--brown)
+    }
+
+    .task-status.completed {
+      color: var(--green)
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap
+    }
+  </style>
 
 
-<style id="dashboard-v08">
-.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;margin-bottom:18px}
-.metric-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
-.metric-card .metric-label{font-size:12px;color:var(--muted);margin-bottom:7px}
-.metric-card .metric-value{font-size:28px;font-weight:800;color:var(--blue)}
-.metric-card.alert .metric-value{color:var(--red)}
-.dashboard-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px}
-.mini-list{display:grid;gap:9px}
-.mini-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-.mini-bar{height:8px;background:#edf1f4;border-radius:999px;overflow:hidden;margin-top:4px}
-.mini-fill{height:100%;background:var(--blue);border-radius:999px}
-.dashboard-actions{display:flex;gap:8px;flex-wrap:wrap}
-.filter-advanced{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.filter-advanced .wide{grid-column:span 2}
-.filter-advanced input,.filter-advanced select{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:8px;font:inherit;background:#fff}
-.filter-summary{font-size:13px;color:var(--muted);margin:8px 0 14px}
-@media(max-width:1100px){.metric-grid{grid-template-columns:repeat(3,1fr)}.dashboard-grid{grid-template-columns:1fr}.filter-advanced{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:700px){.metric-grid{grid-template-columns:repeat(2,1fr)}.filter-advanced{grid-template-columns:1fr}.filter-advanced .wide{grid-column:auto}}
-</style>
+  <style id="dashboard-v08">
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px
+    }
+
+    .metric-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px
+    }
+
+    .metric-card .metric-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 7px
+    }
+
+    .metric-card .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--blue)
+    }
+
+    .metric-card.alert .metric-value {
+      color: var(--red)
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 9px
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center
+    }
+
+    .mini-bar {
+      height: 8px;
+      background: #edf1f4;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px
+    }
+
+    .mini-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 999px
+    }
+
+    .dashboard-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .filter-advanced {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .filter-advanced .wide {
+      grid-column: span 2
+    }
+
+    .filter-advanced input,
+    .filter-advanced select {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: inherit;
+      background: #fff
+    }
+
+    .filter-summary {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 8px 0 14px
+    }
+
+    @media(max-width:1100px) {
+      .metric-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr
+      }
+
+      .filter-advanced {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(max-width:700px) {
+      .metric-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .filter-advanced {
+        grid-template-columns: 1fr
+      }
+
+      .filter-advanced .wide {
+        grid-column: auto
+      }
+    }
+  </style>
 
 </head>
+
 <body>
-<div class="layout">
-<aside>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><img src="/assets/myc-logo.svg" alt="Mishki Yaku Collective" style="width:42px;height:42px;border-radius:10px"><div><div class="brand" style="margin:0">MYC Connect</div><div class="subtitle" style="margin:2px 0 0">Business Matching CRM · v0.9</div></div></div>
-  <nav>
-    <a data-route="dashboard">Dashboard</a>
-    <a data-route="organizations">Organizaciones</a>
-    <a data-route="contacts">Contactos</a>
-    <a data-route="pipeline">Pipeline</a>
-    <a data-route="matches">Matches</a>
-    <a data-route="tasks">Seguimientos</a>
-  </nav>
-  <div style="position:absolute;left:18px;right:18px;bottom:22px;border-top:1px solid var(--border);padding-top:14px">
-    <div id="sessionUser" style="font-size:12px;color:var(--muted);margin-bottom:8px">Sesión activa</div>
-    <button class="secondary" style="width:100%" onclick="logout()">Cerrar sesión</button>
+  <div class="layout">
+    <aside>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><img src="/assets/myc-logo-official.png"
+          alt="Mishki Yaku Collective"
+          style="width:46px;height:46px;object-fit:contain;border-radius:50%;background:white;padding:4px">
+        <div>
+          <div class="brand" style="margin:0">MYC Connect</div>
+          <div class="subtitle" style="margin:2px 0 0">Business Matching CRM · v0.9</div>
+        </div>
+      </div>
+      <nav>
+        <a data-route="dashboard">Dashboard</a>
+        <a data-route="organizations">Organizaciones</a>
+        <a data-route="contacts">Contactos</a>
+        <a data-route="pipeline">Pipeline</a>
+        <a data-route="matches">Matches</a>
+        <a data-route="tasks">Seguimientos</a>
+      </nav>
+      <div
+        style="position:absolute;left:18px;right:18px;bottom:22px;border-top:1px solid var(--border);padding-top:14px">
+        <div id="sessionUser" style="font-size:12px;color:var(--muted);margin-bottom:8px">Sesión activa</div>
+        <button class="secondary" style="width:100%" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </aside>
+    <main id="app"></main>
   </div>
-</aside>
-<main id="app"></main>
-</div>
 
-<div class="modal" id="organizationModal">
-  <div class="modal-box">
-    <h2 id="modalTitle">Registrar organización</h2>
-    <form id="organizationForm">
-      <input type="hidden" name="id" />
-      <div class="grid">
-        <div><label>Nombre *</label><input name="name" required /></div>
-        <div><label>Tipo de organización *</label>
-          <select name="organizationType" required>
-            <option value="Company">Empresa</option><option value="Institution">Institución</option>
-            <option value="University">Universidad</option><option value="NGO">ONG</option>
-            <option value="Association">Asociación</option><option value="Public body">Entidad pública</option>
-          </select>
+  <div class="modal" id="organizationModal">
+    <div class="modal-box">
+      <h2 id="modalTitle">Registrar organización</h2>
+      <form id="organizationForm">
+        <input type="hidden" name="id" />
+        <div class="grid">
+          <div><label>Nombre *</label><input name="name" required /></div>
+          <div><label>Tipo de organización *</label>
+            <select name="organizationType" required>
+              <option value="Company">Empresa</option>
+              <option value="Institution">Institución</option>
+              <option value="University">Universidad</option>
+              <option value="NGO">ONG</option>
+              <option value="Association">Asociación</option>
+              <option value="Public body">Entidad pública</option>
+            </select>
+          </div>
+          <div><label>País *</label><input name="country" value="Ecuador" required /></div>
+          <div><label>Ciudad / Región</label><input name="cityRegion" /></div>
+          <div><label>Dirección *</label>
+            <select name="direction" required>
+              <option value="ECUADOR_TO_EUROPE">Ecuador → Europa</option>
+              <option value="EUROPE_TO_ECUADOR">Europa → Ecuador</option>
+              <option value="SCIENCE_INNOVATION">Science & Innovation</option>
+            </select>
+          </div>
+          <div><label>Sector *</label><input name="sector" required /></div>
+          <div><label>Subsector</label><input name="subsector" /></div>
+          <div><label>Potencial estratégico</label>
+            <select name="strategicPotential">
+              <option value="">Sin definir</option>
+              <option value="HIGH">Alto</option>
+              <option value="MEDIUM">Medio</option>
+              <option value="LOW">Bajo</option>
+            </select>
+          </div>
+          <div><label>Fuente del lead</label><input name="leadSource" /></div>
+          <div><label>Estado comercial</label>
+            <select name="pipelineStage">
+              <option value="IDENTIFIED">Identified</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="RESPONDED">Responded</option>
+              <option value="MEETING">Meeting</option>
+              <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option>
+              <option value="PROPOSAL">Proposal</option>
+              <option value="NEGOTIATION">Negotiation</option>
+              <option value="CLIENT">Client</option>
+              <option value="CLOSED">Closed</option>
+              <option value="NOT_INTERESTED">Not interested</option>
+              <option value="NOT_QUALIFIED">Not qualified</option>
+              <option value="ON_HOLD">On hold</option>
+            </select>
+          </div>
+          <div class="full"><label>Qué ofrece</label><textarea name="offerSummary"></textarea></div>
+          <div class="full"><label>Necesidades (separadas por coma)</label><input name="needs" /></div>
+          <div class="full"><label>Mercados actuales (separados por coma)</label><input name="currentMarkets" /></div>
+          <div class="full"><label>Mercados objetivo (separados por coma)</label><input name="targetMarkets" /></div>
+          <div><label>Sitio web</label><input name="website" /></div>
+          <div><label>LinkedIn</label><input name="linkedin" /></div>
+          <div><label>Instagram</label><input name="instagram" /></div>
+          <div><label>Próxima acción</label><input name="nextAction" /></div>
+          <div><label>Fecha próxima acción</label><input type="date" name="nextActionDate" /></div>
         </div>
-        <div><label>País *</label><input name="country" value="Ecuador" required /></div>
-        <div><label>Ciudad / Región</label><input name="cityRegion" /></div>
-        <div><label>Dirección *</label>
-          <select name="direction" required>
-            <option value="ECUADOR_TO_EUROPE">Ecuador → Europa</option>
-            <option value="EUROPE_TO_ECUADOR">Europa → Ecuador</option>
-            <option value="SCIENCE_INNOVATION">Science & Innovation</option>
-          </select>
+        <div id="formNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar</button>
         </div>
-        <div><label>Sector *</label><input name="sector" required /></div>
-        <div><label>Subsector</label><input name="subsector" /></div>
-        <div><label>Potencial estratégico</label>
-          <select name="strategicPotential">
-            <option value="">Sin definir</option><option value="HIGH">Alto</option>
-            <option value="MEDIUM">Medio</option><option value="LOW">Bajo</option>
-          </select>
-        </div>
-        <div><label>Fuente del lead</label><input name="leadSource" /></div>
-        <div><label>Estado comercial</label>
-          <select name="pipelineStage">
-            <option value="IDENTIFIED">Identified</option><option value="CONTACTED">Contacted</option>
-            <option value="RESPONDED">Responded</option><option value="MEETING">Meeting</option>
-            <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option><option value="PROPOSAL">Proposal</option>
-            <option value="NEGOTIATION">Negotiation</option><option value="CLIENT">Client</option>
-            <option value="CLOSED">Closed</option><option value="NOT_INTERESTED">Not interested</option>
-            <option value="NOT_QUALIFIED">Not qualified</option><option value="ON_HOLD">On hold</option>
-          </select>
-        </div>
-        <div class="full"><label>Qué ofrece</label><textarea name="offerSummary"></textarea></div>
-        <div class="full"><label>Necesidades (separadas por coma)</label><input name="needs" /></div>
-        <div class="full"><label>Mercados actuales (separados por coma)</label><input name="currentMarkets" /></div>
-        <div class="full"><label>Mercados objetivo (separados por coma)</label><input name="targetMarkets" /></div>
-        <div><label>Sitio web</label><input name="website" /></div>
-        <div><label>LinkedIn</label><input name="linkedin" /></div>
-        <div><label>Instagram</label><input name="instagram" /></div>
-        <div><label>Próxima acción</label><input name="nextAction" /></div>
-        <div><label>Fecha próxima acción</label><input type="date" name="nextActionDate" /></div>
-      </div>
-      <div id="formNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<div class="modal" id="contactModal">
-  <div class="modal-box">
-    <h2 id="contactModalTitle">Registrar contacto</h2>
-    <form id="contactForm">
-      <input type="hidden" name="id" />
-      <input type="hidden" name="organizationId" />
-      <div class="grid">
-        <div><label>Nombre *</label><input name="firstName" required /></div>
-        <div><label>Apellido *</label><input name="lastName" required /></div>
-        <div><label>Cargo / rol</label><input name="jobTitle" /></div>
-        <div><label>Email</label><input type="email" name="email" /></div>
-        <div><label>Teléfono / WhatsApp</label><input name="phoneWhatsapp" /></div>
-        <div><label>LinkedIn</label><input name="linkedin" /></div>
-        <div><label>Idioma preferido</label>
-          <select name="preferredLanguage">
-            <option value="">Sin definir</option>
-            <option value="Español">Español</option>
-            <option value="English">English</option>
-            <option value="Deutsch">Deutsch</option>
-            <option value="Français">Français</option>
-            <option value="Italiano">Italiano</option>
-            <option value="Otro">Otro</option>
-          </select>
+  <div class="modal" id="contactModal">
+    <div class="modal-box">
+      <h2 id="contactModalTitle">Registrar contacto</h2>
+      <form id="contactForm">
+        <input type="hidden" name="id" />
+        <input type="hidden" name="organizationId" />
+        <div class="grid">
+          <div><label>Nombre *</label><input name="firstName" required /></div>
+          <div><label>Apellido *</label><input name="lastName" required /></div>
+          <div><label>Cargo / rol</label><input name="jobTitle" /></div>
+          <div><label>Email</label><input type="email" name="email" /></div>
+          <div><label>Teléfono / WhatsApp</label><input name="phoneWhatsapp" /></div>
+          <div><label>LinkedIn</label><input name="linkedin" /></div>
+          <div><label>Idioma preferido</label>
+            <select name="preferredLanguage">
+              <option value="">Sin definir</option>
+              <option value="Español">Español</option>
+              <option value="English">English</option>
+              <option value="Deutsch">Deutsch</option>
+              <option value="Français">Français</option>
+              <option value="Italiano">Italiano</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label>Contacto principal</label>
+            <select name="isPrimary">
+              <option value="false">No</option>
+              <option value="true">Sí</option>
+            </select>
+          </div>
+          <div class="full"><label>Notas</label><textarea name="notes"></textarea></div>
         </div>
-        <div>
-          <label>Contacto principal</label>
-          <select name="isPrimary">
-            <option value="false">No</option>
-            <option value="true">Sí</option>
-          </select>
+        <div id="contactNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeContactModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar contacto</button>
         </div>
-        <div class="full"><label>Notas</label><textarea name="notes"></textarea></div>
-      </div>
-      <div id="contactNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeContactModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar contacto</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<div class="modal" id="interactionModal">
-  <div class="modal-box">
-    <h2 id="interactionModalTitle">Registrar interacción</h2>
-    <form id="interactionForm">
-      <input type="hidden" name="id" />
-      <input type="hidden" name="organizationId" />
-      <div class="grid">
-        <div><label>Fecha y hora</label><input type="datetime-local" name="date" /></div>
-        <div><label>Tipo *</label><select name="type" required>
-          <option value="EMAIL">Email</option><option value="CALL">Llamada</option>
-          <option value="LINKEDIN">LinkedIn</option><option value="INSTAGRAM">Instagram</option>
-          <option value="WHATSAPP">WhatsApp</option><option value="MEETING">Reunión</option>
-          <option value="EVENT">Evento</option><option value="OTHER">Otro</option>
-        </select></div>
-        <div class="full"><label>Nota / resultado *</label><textarea name="note" required placeholder="¿Qué ocurrió? ¿Qué se acordó?"></textarea></div>
-        <div><label>Responsable</label><input name="responsible" placeholder="Ej. Evelyn / Kevin" /></div>
-        <div><label>Adjunto o enlace</label><input name="attachmentUrl" placeholder="https://..." /></div>
-        <div><label>Próxima acción</label><input name="nextAction" placeholder="Ej. Enviar presentación comercial" /></div>
-        <div><label>Fecha límite / seguimiento</label><input type="date" name="deadline" /></div>
-      </div>
-      <div id="interactionNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeInteractionModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar interacción</button>
-      </div>
-    </form>
+  <div class="modal" id="interactionModal">
+    <div class="modal-box">
+      <h2 id="interactionModalTitle">Registrar interacción</h2>
+      <form id="interactionForm">
+        <input type="hidden" name="id" />
+        <input type="hidden" name="organizationId" />
+        <div class="grid">
+          <div><label>Fecha y hora</label><input type="datetime-local" name="date" /></div>
+          <div><label>Tipo *</label><select name="type" required>
+              <option value="EMAIL">Email</option>
+              <option value="CALL">Llamada</option>
+              <option value="LINKEDIN">LinkedIn</option>
+              <option value="INSTAGRAM">Instagram</option>
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="MEETING">Reunión</option>
+              <option value="EVENT">Evento</option>
+              <option value="OTHER">Otro</option>
+            </select></div>
+          <div class="full"><label>Nota / resultado *</label><textarea name="note" required
+              placeholder="¿Qué ocurrió? ¿Qué se acordó?"></textarea></div>
+          <div><label>Responsable</label><input name="responsible" placeholder="Ej. Evelyn / Kevin" /></div>
+          <div><label>Adjunto o enlace</label><input name="attachmentUrl" placeholder="https://..." /></div>
+          <div><label>Próxima acción</label><input name="nextAction" placeholder="Ej. Enviar presentación comercial" />
+          </div>
+          <div><label>Fecha límite / seguimiento</label><input type="date" name="deadline" /></div>
+        </div>
+        <div id="interactionNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeInteractionModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar interacción</button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<div class="modal" id="opportunityModal">
-  <div class="modal-box">
-    <h2 id="opportunityModalTitle">Nueva oportunidad</h2>
-    <form id="opportunityForm">
-      <input type="hidden" name="id" />
-      <input type="hidden" name="organizationId" />
-      <div class="grid">
-        <div class="full">
-          <label>Título *</label>
-          <input name="title" required placeholder="Ej. Introducción comercial con compradores en Alemania" />
+  <div class="modal" id="opportunityModal">
+    <div class="modal-box">
+      <h2 id="opportunityModalTitle">Nueva oportunidad</h2>
+      <form id="opportunityForm">
+        <input type="hidden" name="id" />
+        <input type="hidden" name="organizationId" />
+        <div class="grid">
+          <div class="full">
+            <label>Título *</label>
+            <input name="title" required placeholder="Ej. Introducción comercial con compradores en Alemania" />
+          </div>
+          <div class="full">
+            <label>Descripción</label>
+            <textarea name="description"></textarea>
+          </div>
+          <div>
+            <label>Etapa *</label>
+            <select name="stage" required>
+              <option value="IDENTIFIED">Identified</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="RESPONDED">Responded</option>
+              <option value="MEETING">Meeting</option>
+              <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option>
+              <option value="PROPOSAL">Proposal</option>
+              <option value="NEGOTIATION">Negotiation</option>
+              <option value="CLIENT">Client</option>
+              <option value="CLOSED">Closed</option>
+              <option value="NOT_INTERESTED">Not interested</option>
+              <option value="NOT_QUALIFIED">Not qualified</option>
+              <option value="ON_HOLD">On hold</option>
+            </select>
+          </div>
+          <div>
+            <label>Fecha próxima acción</label>
+            <input type="date" name="nextActionDate" />
+          </div>
+          <div class="full">
+            <label>Próxima acción</label>
+            <input name="nextAction" placeholder="Ej. Enviar propuesta comercial" />
+          </div>
         </div>
-        <div class="full">
-          <label>Descripción</label>
-          <textarea name="description"></textarea>
+        <div id="opportunityNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeOpportunityModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar oportunidad</button>
         </div>
-        <div>
-          <label>Etapa *</label>
-          <select name="stage" required>
-            <option value="IDENTIFIED">Identified</option>
-            <option value="CONTACTED">Contacted</option>
-            <option value="RESPONDED">Responded</option>
-            <option value="MEETING">Meeting</option>
-            <option value="QUALIFIED_OPPORTUNITY">Qualified Opportunity</option>
-            <option value="PROPOSAL">Proposal</option>
-            <option value="NEGOTIATION">Negotiation</option>
-            <option value="CLIENT">Client</option>
-            <option value="CLOSED">Closed</option>
-            <option value="NOT_INTERESTED">Not interested</option>
-            <option value="NOT_QUALIFIED">Not qualified</option>
-            <option value="ON_HOLD">On hold</option>
-          </select>
-        </div>
-        <div>
-          <label>Fecha próxima acción</label>
-          <input type="date" name="nextActionDate" />
-        </div>
-        <div class="full">
-          <label>Próxima acción</label>
-          <input name="nextAction" placeholder="Ej. Enviar propuesta comercial" />
-        </div>
-      </div>
-      <div id="opportunityNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeOpportunityModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar oportunidad</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<div class="modal" id="matchModal">
-  <div class="modal-box">
-    <h2 id="matchModalTitle">Crear match</h2>
-    <form id="matchForm">
-      <input type="hidden" name="id" />
-      <div class="grid">
-        <div>
-          <label>Organización A *</label>
-          <select name="organizationAId" required></select>
+  <div class="modal" id="matchModal">
+    <div class="modal-box">
+      <h2 id="matchModalTitle">Crear match</h2>
+      <form id="matchForm">
+        <input type="hidden" name="id" />
+        <div class="grid">
+          <div>
+            <label>Organización A *</label>
+            <select name="organizationAId" required></select>
+          </div>
+          <div>
+            <label>Organización B *</label>
+            <select name="organizationBId" required></select>
+          </div>
+          <div class="full">
+            <label>Motivo / compatibilidad *</label>
+            <textarea name="reason" required
+              placeholder="Explique por qué estas organizaciones tienen potencial de colaboración."></textarea>
+          </div>
+          <div class="full">
+            <label>Need ↔ Offer</label>
+            <input name="needOffer" placeholder="Ej. Buyer of premium roses ↔ Ecuadorian rose supplier" />
+          </div>
+          <div>
+            <label>Estado *</label>
+            <select name="status" required>
+              <option value="POTENTIAL">Potential</option>
+              <option value="CONTACT_PLANNED">Contact planned</option>
+              <option value="INTRODUCED">Introduced</option>
+              <option value="MEETING">Meeting</option>
+              <option value="ACTIVE_OPPORTUNITY">Active opportunity</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+          <div>
+            <label>Rol de MYC</label>
+            <select name="mycRole">
+              <option value="">Sin definir</option>
+              <option value="Introduction">Introduction</option>
+              <option value="Coordination">Coordination</option>
+              <option value="Representation">Representation</option>
+              <option value="Advisory">Advisory</option>
+              <option value="Follow-up">Follow-up</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Próxima acción</label>
+            <input name="nextAction" placeholder="Ej. Presentar ambas empresas por email" />
+          </div>
+          <div class="full">
+            <label>Notas</label>
+            <textarea name="notes"></textarea>
+          </div>
         </div>
-        <div>
-          <label>Organización B *</label>
-          <select name="organizationBId" required></select>
+        <div id="matchNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeMatchModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar match</button>
         </div>
-        <div class="full">
-          <label>Motivo / compatibilidad *</label>
-          <textarea name="reason" required placeholder="Explique por qué estas organizaciones tienen potencial de colaboración."></textarea>
-        </div>
-        <div class="full">
-          <label>Need ↔ Offer</label>
-          <input name="needOffer" placeholder="Ej. Buyer of premium roses ↔ Ecuadorian rose supplier" />
-        </div>
-        <div>
-          <label>Estado *</label>
-          <select name="status" required>
-            <option value="POTENTIAL">Potential</option>
-            <option value="CONTACT_PLANNED">Contact planned</option>
-            <option value="INTRODUCED">Introduced</option>
-            <option value="MEETING">Meeting</option>
-            <option value="ACTIVE_OPPORTUNITY">Active opportunity</option>
-            <option value="CLOSED">Closed</option>
-          </select>
-        </div>
-        <div>
-          <label>Rol de MYC</label>
-          <select name="mycRole">
-            <option value="">Sin definir</option>
-            <option value="Introduction">Introduction</option>
-            <option value="Coordination">Coordination</option>
-            <option value="Representation">Representation</option>
-            <option value="Advisory">Advisory</option>
-            <option value="Follow-up">Follow-up</option>
-          </select>
-        </div>
-        <div class="full">
-          <label>Próxima acción</label>
-          <input name="nextAction" placeholder="Ej. Presentar ambas empresas por email" />
-        </div>
-        <div class="full">
-          <label>Notas</label>
-          <textarea name="notes"></textarea>
-        </div>
-      </div>
-      <div id="matchNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeMatchModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar match</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<div class="modal" id="taskModal">
-  <div class="modal-box">
-    <h2 id="taskModalTitle">Nuevo seguimiento</h2>
-    <form id="taskForm">
-      <input type="hidden" name="id" />
-      <div class="grid">
-        <div class="full">
-          <label>Organización</label>
-          <select name="organizationId"></select>
+  <div class="modal" id="taskModal">
+    <div class="modal-box">
+      <h2 id="taskModalTitle">Nuevo seguimiento</h2>
+      <form id="taskForm">
+        <input type="hidden" name="id" />
+        <div class="grid">
+          <div class="full">
+            <label>Organización</label>
+            <select name="organizationId"></select>
+          </div>
+          <div class="full">
+            <label>Título / próxima acción *</label>
+            <input name="title" required placeholder="Ej. Enviar propuesta comercial" />
+          </div>
+          <div class="full">
+            <label>Descripción</label>
+            <textarea name="description"></textarea>
+          </div>
+          <div>
+            <label>Responsable</label>
+            <input name="ownerName" placeholder="Ej. Evelyn / Kevin" />
+          </div>
+          <div>
+            <label>Fecha límite</label>
+            <input type="date" name="dueDate" />
+          </div>
+          <div>
+            <label>Estado</label>
+            <select name="completed">
+              <option value="false">Pendiente</option>
+              <option value="true">Completado</option>
+            </select>
+          </div>
         </div>
-        <div class="full">
-          <label>Título / próxima acción *</label>
-          <input name="title" required placeholder="Ej. Enviar propuesta comercial" />
+        <div id="taskNotice" class="notice"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="closeTaskModal">Cancelar</button>
+          <button type="submit" class="primary">Guardar seguimiento</button>
         </div>
-        <div class="full">
-          <label>Descripción</label>
-          <textarea name="description"></textarea>
-        </div>
-        <div>
-          <label>Responsable</label>
-          <input name="ownerName" placeholder="Ej. Evelyn / Kevin" />
-        </div>
-        <div>
-          <label>Fecha límite</label>
-          <input type="date" name="dueDate" />
-        </div>
-        <div>
-          <label>Estado</label>
-          <select name="completed">
-            <option value="false">Pendiente</option>
-            <option value="true">Completado</option>
-          </select>
-        </div>
-      </div>
-      <div id="taskNotice" class="notice"></div>
-      <div class="actions">
-        <button type="button" class="secondary" id="closeTaskModal">Cancelar</button>
-        <button type="submit" class="primary">Guardar seguimiento</button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<script>
-const nativeFetch = window.fetch.bind(window);
-window.fetch = async (...args) => {
-  const response = await nativeFetch(...args);
-  if (response.status === 401) {
-    window.location.href = "/login";
-    throw new Error("Sesión expirada.");
-  }
-  return response;
-};
+  <script>
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const response = await nativeFetch(...args);
+      if (response.status === 401) {
+        window.location.href = "/login";
+        throw new Error("Sesión expirada.");
+      }
+      return response;
+    };
 
-async function loadSessionUser(){
-  try {
-    const res = await nativeFetch("/api/auth/me");
-    if (!res.ok) {
+    async function loadSessionUser() {
+      try {
+        const res = await nativeFetch("/api/auth/me");
+        if (!res.ok) {
+          window.location.href = "/login";
+          return;
+        }
+        const user = await res.json();
+        const el = document.getElementById("sessionUser");
+        if (el) el.textContent = `${user.name} · ${user.role}`;
+      } catch {
+        window.location.href = "/login";
+      }
+    }
+
+    async function logout() {
+      await nativeFetch("/api/auth/logout", { method: "POST" });
       window.location.href = "/login";
-      return;
     }
-    const user = await res.json();
-    const el = document.getElementById("sessionUser");
-    if (el) el.textContent = `${user.name} · ${user.role}`;
-  } catch {
-    window.location.href = "/login";
-  }
-}
 
-async function logout(){
-  await nativeFetch("/api/auth/logout", { method: "POST" });
-  window.location.href = "/login";
-}
+    loadSessionUser();
 
-loadSessionUser();
+    const app = document.getElementById("app");
+    const modal = document.getElementById("organizationModal");
+    const form = document.getElementById("organizationForm");
+    const notice = document.getElementById("formNotice");
 
-const app = document.getElementById("app");
-const modal = document.getElementById("organizationModal");
-const form = document.getElementById("organizationForm");
-const notice = document.getElementById("formNotice");
+    const labels = {
+      ECUADOR_TO_EUROPE: "Ecuador → Europa", EUROPE_TO_ECUADOR: "Europa → Ecuador", SCIENCE_INNOVATION: "Science & Innovation",
+      HIGH: "Alto", MEDIUM: "Medio", LOW: "Bajo"
+    };
 
-const labels = {
-  ECUADOR_TO_EUROPE:"Ecuador → Europa", EUROPE_TO_ECUADOR:"Europa → Ecuador", SCIENCE_INNOVATION:"Science & Innovation",
-  HIGH:"Alto", MEDIUM:"Medio", LOW:"Bajo"
-};
-
-function esc(v){return String(v ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));}
-function fmtDate(v){ if(!v) return "—"; return new Date(v).toLocaleDateString("es-EC"); }
-function setActive(route){
-  document.querySelectorAll("nav a[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===route));
-}
-function goto(route){ location.hash = route; }
-document.querySelectorAll("nav a[data-route]").forEach(a=>a.onclick=()=>goto(a.dataset.route));
-
-function parseCsv(v){ return String(v||"").split(",").map(x=>x.trim()).filter(Boolean); }
-function dateInput(v){ return v ? new Date(v).toISOString().slice(0,10) : ""; }
-
-function openCreate(){
-  form.reset(); form.elements.id.value=""; form.elements.country.value="Ecuador";
-  document.getElementById("modalTitle").textContent="Registrar organización";
-  notice.textContent=""; modal.classList.add("open");
-}
-function openEdit(o){
-  form.reset();
-  document.getElementById("modalTitle").textContent="Editar organización";
-  const set=(n,v)=>{ if(form.elements[n]) form.elements[n].value=v ?? ""; };
-  set("id",o.id); set("name",o.name); set("organizationType",o.organizationType); set("country",o.country);
-  set("cityRegion",o.cityRegion); set("website",o.website); set("linkedin",o.linkedin); set("instagram",o.instagram);
-  set("direction",o.direction); set("sector",o.sector); set("subsector",o.subsector); set("offerSummary",o.offerSummary);
-  set("needs",(o.needs||[]).join(", ")); set("currentMarkets",(o.currentMarkets||[]).join(", "));
-  set("targetMarkets",(o.targetMarkets||[]).join(", ")); set("strategicPotential",o.strategicPotential);
-  set("leadSource",o.leadSource); set("pipelineStage",o.pipelineStage); set("nextAction",o.nextAction);
-  set("nextActionDate",dateInput(o.nextActionDate)); notice.textContent=""; modal.classList.add("open");
-}
-document.getElementById("closeModal").onclick=()=>modal.classList.remove("open");
-
-form.addEventListener("submit",async e=>{
-  e.preventDefault(); const fd=new FormData(form); const data=Object.fromEntries(fd.entries()); const id=data.id; delete data.id;
-  data.needs=parseCsv(data.needs); data.currentMarkets=parseCsv(data.currentMarkets); data.targetMarkets=parseCsv(data.targetMarkets);
-  notice.textContent="Guardando...";
-  const res=await fetch(id?`/api/organizations/${id}`:"/api/organizations",{
-    method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)
-  });
-  const out=await res.json();
-  if(!res.ok){ notice.textContent=out.error||"Ocurrió un error."; return; }
-  notice.textContent=id?"Organización actualizada.":"Organización registrada.";
-  setTimeout(()=>{modal.classList.remove("open"); route();},350);
-});
-
-
-const contactModal = document.getElementById("contactModal");
-const contactForm = document.getElementById("contactForm");
-const contactNotice = document.getElementById("contactNotice");
-
-function openContactCreate(organizationId){
-  contactForm.reset();
-  contactForm.elements.id.value = "";
-  contactForm.elements.organizationId.value = organizationId;
-  document.getElementById("contactModalTitle").textContent = "Registrar contacto";
-  contactNotice.textContent = "";
-  contactModal.classList.add("open");
-}
-
-function openContactEdit(c){
-  contactForm.reset();
-  document.getElementById("contactModalTitle").textContent = "Editar contacto";
-  contactForm.elements.id.value = c.id;
-  contactForm.elements.organizationId.value = c.organizationId;
-  contactForm.elements.firstName.value = c.firstName || "";
-  contactForm.elements.lastName.value = c.lastName || "";
-  contactForm.elements.jobTitle.value = c.jobTitle || "";
-  contactForm.elements.email.value = c.email || "";
-  contactForm.elements.phoneWhatsapp.value = c.phoneWhatsapp || "";
-  contactForm.elements.linkedin.value = c.linkedin || "";
-  contactForm.elements.preferredLanguage.value = c.preferredLanguage || "";
-  contactForm.elements.isPrimary.value = c.isPrimary ? "true" : "false";
-  contactForm.elements.notes.value = c.notes || "";
-  contactNotice.textContent = "";
-  contactModal.classList.add("open");
-}
-
-document.getElementById("closeContactModal").onclick = () => contactModal.classList.remove("open");
-
-contactForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const fd = new FormData(contactForm);
-  const data = Object.fromEntries(fd.entries());
-  const id = data.id;
-  const organizationId = data.organizationId;
-  delete data.id;
-  delete data.organizationId;
-  data.isPrimary = data.isPrimary === "true";
-
-  contactNotice.textContent = "Guardando...";
-
-  const res = await fetch(
-    id ? `/api/contacts/${id}` : `/api/organizations/${organizationId}/contacts`,
-    {
-      method: id ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+    function esc(v) { return String(v ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" }[m])); }
+    function fmtDate(v) { if (!v) return "—"; return new Date(v).toLocaleDateString("es-EC"); }
+    function setActive(route) {
+      document.querySelectorAll("nav a[data-route]").forEach(a => a.classList.toggle("active", a.dataset.route === route));
     }
-  );
+    function goto(route) { location.hash = route; }
+    document.querySelectorAll("nav a[data-route]").forEach(a => a.onclick = () => goto(a.dataset.route));
 
-  const out = await res.json();
-  if (!res.ok) {
-    contactNotice.textContent = out.error || "Ocurrió un error.";
-    return;
-  }
+    function parseCsv(v) { return String(v || "").split(",").map(x => x.trim()).filter(Boolean); }
+    function dateInput(v) { return v ? new Date(v).toISOString().slice(0, 10) : ""; }
 
-  contactNotice.textContent = id ? "Contacto actualizado." : "Contacto registrado.";
-  setTimeout(() => {
-    contactModal.classList.remove("open");
-    route();
-  }, 300);
-});
+    function openCreate() {
+      form.reset(); form.elements.id.value = ""; form.elements.country.value = "Ecuador";
+      document.getElementById("modalTitle").textContent = "Registrar organización";
+      notice.textContent = ""; modal.classList.add("open");
+    }
+    function openEdit(o) {
+      form.reset();
+      document.getElementById("modalTitle").textContent = "Editar organización";
+      const set = (n, v) => { if (form.elements[n]) form.elements[n].value = v ?? ""; };
+      set("id", o.id); set("name", o.name); set("organizationType", o.organizationType); set("country", o.country);
+      set("cityRegion", o.cityRegion); set("website", o.website); set("linkedin", o.linkedin); set("instagram", o.instagram);
+      set("direction", o.direction); set("sector", o.sector); set("subsector", o.subsector); set("offerSummary", o.offerSummary);
+      set("needs", (o.needs || []).join(", ")); set("currentMarkets", (o.currentMarkets || []).join(", "));
+      set("targetMarkets", (o.targetMarkets || []).join(", ")); set("strategicPotential", o.strategicPotential);
+      set("leadSource", o.leadSource); set("pipelineStage", o.pipelineStage); set("nextAction", o.nextAction);
+      set("nextActionDate", dateInput(o.nextActionDate)); notice.textContent = ""; modal.classList.add("open");
+    }
+    document.getElementById("closeModal").onclick = () => modal.classList.remove("open");
 
-async function deleteContact(id){
-  if (!confirm("¿Eliminar este contacto?")) return;
-  const res = await fetch(`/api/contacts/${id}`, { method: "DELETE" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
-  route();
-}
+    form.addEventListener("submit", async e => {
+      e.preventDefault(); const fd = new FormData(form); const data = Object.fromEntries(fd.entries()); const id = data.id; delete data.id;
+      data.needs = parseCsv(data.needs); data.currentMarkets = parseCsv(data.currentMarkets); data.targetMarkets = parseCsv(data.targetMarkets);
+      notice.textContent = "Guardando...";
+      const res = await fetch(id ? `/api/organizations/${id}` : "/api/organizations", {
+        method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
+      });
+      const out = await res.json();
+      if (!res.ok) { notice.textContent = out.error || "Ocurrió un error."; return; }
+      notice.textContent = id ? "Organización actualizada." : "Organización registrada.";
+      setTimeout(() => { modal.classList.remove("open"); route(); }, 350);
+    });
 
-async function contactsPage(){
-  setActive("contacts");
-  app.innerHTML = `
+
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactNotice = document.getElementById("contactNotice");
+
+    function openContactCreate(organizationId) {
+      contactForm.reset();
+      contactForm.elements.id.value = "";
+      contactForm.elements.organizationId.value = organizationId;
+      document.getElementById("contactModalTitle").textContent = "Registrar contacto";
+      contactNotice.textContent = "";
+      contactModal.classList.add("open");
+    }
+
+    function openContactEdit(c) {
+      contactForm.reset();
+      document.getElementById("contactModalTitle").textContent = "Editar contacto";
+      contactForm.elements.id.value = c.id;
+      contactForm.elements.organizationId.value = c.organizationId;
+      contactForm.elements.firstName.value = c.firstName || "";
+      contactForm.elements.lastName.value = c.lastName || "";
+      contactForm.elements.jobTitle.value = c.jobTitle || "";
+      contactForm.elements.email.value = c.email || "";
+      contactForm.elements.phoneWhatsapp.value = c.phoneWhatsapp || "";
+      contactForm.elements.linkedin.value = c.linkedin || "";
+      contactForm.elements.preferredLanguage.value = c.preferredLanguage || "";
+      contactForm.elements.isPrimary.value = c.isPrimary ? "true" : "false";
+      contactForm.elements.notes.value = c.notes || "";
+      contactNotice.textContent = "";
+      contactModal.classList.add("open");
+    }
+
+    document.getElementById("closeContactModal").onclick = () => contactModal.classList.remove("open");
+
+    contactForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const fd = new FormData(contactForm);
+      const data = Object.fromEntries(fd.entries());
+      const id = data.id;
+      const organizationId = data.organizationId;
+      delete data.id;
+      delete data.organizationId;
+      data.isPrimary = data.isPrimary === "true";
+
+      contactNotice.textContent = "Guardando...";
+
+      const res = await fetch(
+        id ? `/api/contacts/${id}` : `/api/organizations/${organizationId}/contacts`,
+        {
+          method: id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        }
+      );
+
+      const out = await res.json();
+      if (!res.ok) {
+        contactNotice.textContent = out.error || "Ocurrió un error.";
+        return;
+      }
+
+      contactNotice.textContent = id ? "Contacto actualizado." : "Contacto registrado.";
+      setTimeout(() => {
+        contactModal.classList.remove("open");
+        route();
+      }, 300);
+    });
+
+    async function deleteContact(id) {
+      if (!confirm("¿Eliminar este contacto?")) return;
+      const res = await fetch(`/api/contacts/${id}`, { method: "DELETE" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+      route();
+    }
+
+    async function contactsPage() {
+      setActive("contacts");
+      app.innerHTML = `
     <div class="top">
       <div><h1>Contactos</h1><small>Personas vinculadas a organizaciones</small></div>
     </div>
@@ -583,11 +1160,11 @@ async function contactsPage(){
       </table>
     </section>`;
 
-  const res = await fetch("/api/contacts");
-  const items = await res.json();
-  const tbody = document.getElementById("contactRows");
+      const res = await fetch("/api/contacts");
+      const items = await res.json();
+      const tbody = document.getElementById("contactRows");
 
-  tbody.innerHTML = items.length ? items.map(c => `
+      tbody.innerHTML = items.length ? items.map(c => `
     <tr class="clickable" onclick="goto('organization/${c.organizationId}')">
       <td><strong>${esc(c.firstName + " " + c.lastName)}</strong></td>
       <td>${esc(c.organization?.name || "—")}</td>
@@ -597,185 +1174,185 @@ async function contactsPage(){
       <td>${c.isPrimary ? '<span class="pill">Sí</span>' : 'No'}</td>
     </tr>
   `).join("") : `<tr><td colspan="6" class="empty">Todavía no hay contactos registrados.</td></tr>`;
-}
-
-
-
-const interactionModal = document.getElementById("interactionModal");
-const interactionForm = document.getElementById("interactionForm");
-const interactionNotice = document.getElementById("interactionNotice");
-const interactionLabels = { EMAIL:"Email", CALL:"Llamada", LINKEDIN:"LinkedIn", INSTAGRAM:"Instagram", WHATSAPP:"WhatsApp", MEETING:"Reunión", EVENT:"Evento", OTHER:"Otro" };
-
-function toLocalDateTimeInput(v){
-  const d = v ? new Date(v) : new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0,16);
-}
-
-function openInteractionCreate(organizationId){
-  interactionForm.reset();
-  interactionForm.elements.id.value = "";
-  interactionForm.elements.organizationId.value = organizationId;
-  interactionForm.elements.date.value = toLocalDateTimeInput();
-  document.getElementById("interactionModalTitle").textContent = "Registrar interacción";
-  interactionNotice.textContent = "";
-  interactionModal.classList.add("open");
-}
-
-function openInteractionEdit(i){
-  interactionForm.reset();
-  document.getElementById("interactionModalTitle").textContent = "Editar interacción";
-  interactionForm.elements.id.value = i.id;
-  interactionForm.elements.organizationId.value = i.organizationId;
-  interactionForm.elements.date.value = toLocalDateTimeInput(i.date);
-  interactionForm.elements.type.value = i.type || "OTHER";
-  interactionForm.elements.note.value = i.note || "";
-  interactionForm.elements.responsible.value = i.responsible || "";
-  interactionForm.elements.attachmentUrl.value = i.attachmentUrl || "";
-  interactionForm.elements.nextAction.value = i.nextAction || "";
-  interactionForm.elements.deadline.value = i.deadline ? new Date(i.deadline).toISOString().slice(0,10) : "";
-  interactionNotice.textContent = "";
-  interactionModal.classList.add("open");
-}
-
-document.getElementById("closeInteractionModal").onclick = () => interactionModal.classList.remove("open");
-
-interactionForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const fd = new FormData(interactionForm);
-  const data = Object.fromEntries(fd.entries());
-  const id = data.id;
-  const organizationId = data.organizationId;
-  delete data.id; delete data.organizationId;
-  interactionNotice.textContent = "Guardando...";
-
-  const res = await fetch(id ? `/api/interactions/${id}` : `/api/organizations/${organizationId}/interactions`, {
-    method: id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  const out = await res.json();
-  if (!res.ok) { interactionNotice.textContent = out.error || "Ocurrió un error."; return; }
-  interactionNotice.textContent = id ? "Interacción actualizada." : "Interacción registrada.";
-  setTimeout(() => { interactionModal.classList.remove("open"); route(); }, 300);
-});
-
-async function deleteInteraction(id){
-  if (!confirm("¿Eliminar esta interacción del historial?")) return;
-  const res = await fetch(`/api/interactions/${id}`, { method: "DELETE" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
-  route();
-}
-
-
-const opportunityModal = document.getElementById("opportunityModal");
-const opportunityForm = document.getElementById("opportunityForm");
-const opportunityNotice = document.getElementById("opportunityNotice");
-
-const pipelineStages = [
-  "IDENTIFIED","CONTACTED","RESPONDED","MEETING",
-  "QUALIFIED_OPPORTUNITY","PROPOSAL","NEGOTIATION","CLIENT"
-];
-
-const pipelineLabels = {
-  IDENTIFIED:"Identified",
-  CONTACTED:"Contacted",
-  RESPONDED:"Responded",
-  MEETING:"Meeting",
-  QUALIFIED_OPPORTUNITY:"Qualified Opportunity",
-  PROPOSAL:"Proposal",
-  NEGOTIATION:"Negotiation",
-  CLIENT:"Client",
-  CLOSED:"Closed",
-  NOT_INTERESTED:"Not interested",
-  NOT_QUALIFIED:"Not qualified",
-  ON_HOLD:"On hold"
-};
-
-function openOpportunityCreate(organizationId){
-  opportunityForm.reset();
-  opportunityForm.elements.id.value = "";
-  opportunityForm.elements.organizationId.value = organizationId;
-  document.getElementById("opportunityModalTitle").textContent = "Nueva oportunidad";
-  opportunityNotice.textContent = "";
-  opportunityModal.classList.add("open");
-}
-
-function openOpportunityEdit(o){
-  opportunityForm.reset();
-  document.getElementById("opportunityModalTitle").textContent = "Editar oportunidad";
-  opportunityForm.elements.id.value = o.id;
-  opportunityForm.elements.organizationId.value = o.organizationId;
-  opportunityForm.elements.title.value = o.title || "";
-  opportunityForm.elements.description.value = o.description || "";
-  opportunityForm.elements.stage.value = o.stage || "IDENTIFIED";
-  opportunityForm.elements.nextAction.value = o.nextAction || "";
-  opportunityForm.elements.nextActionDate.value = o.nextActionDate ? new Date(o.nextActionDate).toISOString().slice(0,10) : "";
-  opportunityNotice.textContent = "";
-  opportunityModal.classList.add("open");
-}
-
-document.getElementById("closeOpportunityModal").onclick = () => opportunityModal.classList.remove("open");
-
-opportunityForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const fd = new FormData(opportunityForm);
-  const data = Object.fromEntries(fd.entries());
-  const id = data.id;
-  const organizationId = data.organizationId;
-  delete data.id;
-  delete data.organizationId;
-
-  opportunityNotice.textContent = "Guardando...";
-
-  const res = await fetch(
-    id ? `/api/opportunities/${id}` : `/api/organizations/${organizationId}/opportunities`,
-    {
-      method: id ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
     }
-  );
 
-  const out = await res.json();
-  if (!res.ok) {
-    opportunityNotice.textContent = out.error || "Ocurrió un error.";
-    return;
-  }
 
-  opportunityNotice.textContent = id ? "Oportunidad actualizada." : "Oportunidad creada.";
-  setTimeout(() => {
-    opportunityModal.classList.remove("open");
-    route();
-  }, 300);
-});
 
-async function deleteOpportunity(id){
-  if (!confirm("¿Eliminar esta oportunidad?")) return;
-  const res = await fetch(`/api/opportunities/${id}`, { method: "DELETE" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
-  route();
-}
+    const interactionModal = document.getElementById("interactionModal");
+    const interactionForm = document.getElementById("interactionForm");
+    const interactionNotice = document.getElementById("interactionNotice");
+    const interactionLabels = { EMAIL: "Email", CALL: "Llamada", LINKEDIN: "LinkedIn", INSTAGRAM: "Instagram", WHATSAPP: "WhatsApp", MEETING: "Reunión", EVENT: "Evento", OTHER: "Otro" };
 
-async function changeOpportunityStage(id, stage){
-  const res = await fetch(`/api/opportunities/${id}/stage`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stage })
-  });
-  const out = await res.json();
-  if (!res.ok) {
-    alert(out.error || "No se pudo cambiar la etapa.");
-    return;
-  }
-  pipelinePage();
-}
+    function toLocalDateTimeInput(v) {
+      const d = v ? new Date(v) : new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().slice(0, 16);
+    }
 
-async function pipelinePage(){
-  setActive("pipeline");
-  app.innerHTML = `
+    function openInteractionCreate(organizationId) {
+      interactionForm.reset();
+      interactionForm.elements.id.value = "";
+      interactionForm.elements.organizationId.value = organizationId;
+      interactionForm.elements.date.value = toLocalDateTimeInput();
+      document.getElementById("interactionModalTitle").textContent = "Registrar interacción";
+      interactionNotice.textContent = "";
+      interactionModal.classList.add("open");
+    }
+
+    function openInteractionEdit(i) {
+      interactionForm.reset();
+      document.getElementById("interactionModalTitle").textContent = "Editar interacción";
+      interactionForm.elements.id.value = i.id;
+      interactionForm.elements.organizationId.value = i.organizationId;
+      interactionForm.elements.date.value = toLocalDateTimeInput(i.date);
+      interactionForm.elements.type.value = i.type || "OTHER";
+      interactionForm.elements.note.value = i.note || "";
+      interactionForm.elements.responsible.value = i.responsible || "";
+      interactionForm.elements.attachmentUrl.value = i.attachmentUrl || "";
+      interactionForm.elements.nextAction.value = i.nextAction || "";
+      interactionForm.elements.deadline.value = i.deadline ? new Date(i.deadline).toISOString().slice(0, 10) : "";
+      interactionNotice.textContent = "";
+      interactionModal.classList.add("open");
+    }
+
+    document.getElementById("closeInteractionModal").onclick = () => interactionModal.classList.remove("open");
+
+    interactionForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const fd = new FormData(interactionForm);
+      const data = Object.fromEntries(fd.entries());
+      const id = data.id;
+      const organizationId = data.organizationId;
+      delete data.id; delete data.organizationId;
+      interactionNotice.textContent = "Guardando...";
+
+      const res = await fetch(id ? `/api/interactions/${id}` : `/api/organizations/${organizationId}/interactions`, {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const out = await res.json();
+      if (!res.ok) { interactionNotice.textContent = out.error || "Ocurrió un error."; return; }
+      interactionNotice.textContent = id ? "Interacción actualizada." : "Interacción registrada.";
+      setTimeout(() => { interactionModal.classList.remove("open"); route(); }, 300);
+    });
+
+    async function deleteInteraction(id) {
+      if (!confirm("¿Eliminar esta interacción del historial?")) return;
+      const res = await fetch(`/api/interactions/${id}`, { method: "DELETE" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+      route();
+    }
+
+
+    const opportunityModal = document.getElementById("opportunityModal");
+    const opportunityForm = document.getElementById("opportunityForm");
+    const opportunityNotice = document.getElementById("opportunityNotice");
+
+    const pipelineStages = [
+      "IDENTIFIED", "CONTACTED", "RESPONDED", "MEETING",
+      "QUALIFIED_OPPORTUNITY", "PROPOSAL", "NEGOTIATION", "CLIENT"
+    ];
+
+    const pipelineLabels = {
+      IDENTIFIED: "Identified",
+      CONTACTED: "Contacted",
+      RESPONDED: "Responded",
+      MEETING: "Meeting",
+      QUALIFIED_OPPORTUNITY: "Qualified Opportunity",
+      PROPOSAL: "Proposal",
+      NEGOTIATION: "Negotiation",
+      CLIENT: "Client",
+      CLOSED: "Closed",
+      NOT_INTERESTED: "Not interested",
+      NOT_QUALIFIED: "Not qualified",
+      ON_HOLD: "On hold"
+    };
+
+    function openOpportunityCreate(organizationId) {
+      opportunityForm.reset();
+      opportunityForm.elements.id.value = "";
+      opportunityForm.elements.organizationId.value = organizationId;
+      document.getElementById("opportunityModalTitle").textContent = "Nueva oportunidad";
+      opportunityNotice.textContent = "";
+      opportunityModal.classList.add("open");
+    }
+
+    function openOpportunityEdit(o) {
+      opportunityForm.reset();
+      document.getElementById("opportunityModalTitle").textContent = "Editar oportunidad";
+      opportunityForm.elements.id.value = o.id;
+      opportunityForm.elements.organizationId.value = o.organizationId;
+      opportunityForm.elements.title.value = o.title || "";
+      opportunityForm.elements.description.value = o.description || "";
+      opportunityForm.elements.stage.value = o.stage || "IDENTIFIED";
+      opportunityForm.elements.nextAction.value = o.nextAction || "";
+      opportunityForm.elements.nextActionDate.value = o.nextActionDate ? new Date(o.nextActionDate).toISOString().slice(0, 10) : "";
+      opportunityNotice.textContent = "";
+      opportunityModal.classList.add("open");
+    }
+
+    document.getElementById("closeOpportunityModal").onclick = () => opportunityModal.classList.remove("open");
+
+    opportunityForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const fd = new FormData(opportunityForm);
+      const data = Object.fromEntries(fd.entries());
+      const id = data.id;
+      const organizationId = data.organizationId;
+      delete data.id;
+      delete data.organizationId;
+
+      opportunityNotice.textContent = "Guardando...";
+
+      const res = await fetch(
+        id ? `/api/opportunities/${id}` : `/api/organizations/${organizationId}/opportunities`,
+        {
+          method: id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        }
+      );
+
+      const out = await res.json();
+      if (!res.ok) {
+        opportunityNotice.textContent = out.error || "Ocurrió un error.";
+        return;
+      }
+
+      opportunityNotice.textContent = id ? "Oportunidad actualizada." : "Oportunidad creada.";
+      setTimeout(() => {
+        opportunityModal.classList.remove("open");
+        route();
+      }, 300);
+    });
+
+    async function deleteOpportunity(id) {
+      if (!confirm("¿Eliminar esta oportunidad?")) return;
+      const res = await fetch(`/api/opportunities/${id}`, { method: "DELETE" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+      route();
+    }
+
+    async function changeOpportunityStage(id, stage) {
+      const res = await fetch(`/api/opportunities/${id}/stage`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage })
+      });
+      const out = await res.json();
+      if (!res.ok) {
+        alert(out.error || "No se pudo cambiar la etapa.");
+        return;
+      }
+      pipelinePage();
+    }
+
+    async function pipelinePage() {
+      setActive("pipeline");
+      app.innerHTML = `
     <div class="top">
       <div>
         <h1>Pipeline comercial</h1>
@@ -784,13 +1361,13 @@ async function pipelinePage(){
     </div>
     <div id="pipelineBoard" class="pipeline-board"></div>`;
 
-  const res = await fetch("/api/opportunities");
-  const items = await res.json();
+      const res = await fetch("/api/opportunities");
+      const items = await res.json();
 
-  const board = document.getElementById("pipelineBoard");
-  board.innerHTML = pipelineStages.map(stage => {
-    const stageItems = items.filter(x => x.stage === stage);
-    return `
+      const board = document.getElementById("pipelineBoard");
+      board.innerHTML = pipelineStages.map(stage => {
+        const stageItems = items.filter(x => x.stage === stage);
+        return `
       <section class="pipeline-col">
         <h3>${pipelineLabels[stage]} · ${stageItems.length}</h3>
         ${stageItems.length ? stageItems.map(o => `
@@ -799,118 +1376,118 @@ async function pipelinePage(){
             <div class="org">${esc(o.organization?.name || "—")}</div>
             ${o.nextAction ? `<div class="muted" style="font-size:12px;margin-bottom:8px">Próxima: ${esc(o.nextAction)}</div>` : ""}
             <select onchange="changeOpportunityStage('${o.id}', this.value)">
-              ${pipelineStages.map(s => `<option value="${s}" ${s===o.stage?"selected":""}>${pipelineLabels[s]}</option>`).join("")}
+              ${pipelineStages.map(s => `<option value="${s}" ${s === o.stage ? "selected" : ""}>${pipelineLabels[s]}</option>`).join("")}
             </select>
           </div>
         `).join("") : `<div class="empty">Sin oportunidades</div>`}
       </section>`;
-  }).join("");
-}
+      }).join("");
+    }
 
 
 
-const matchModal = document.getElementById("matchModal");
-const matchForm = document.getElementById("matchForm");
-const matchNotice = document.getElementById("matchNotice");
+    const matchModal = document.getElementById("matchModal");
+    const matchForm = document.getElementById("matchForm");
+    const matchNotice = document.getElementById("matchNotice");
 
-const matchLabels = {
-  POTENTIAL: "Potential",
-  CONTACT_PLANNED: "Contact planned",
-  INTRODUCED: "Introduced",
-  MEETING: "Meeting",
-  ACTIVE_OPPORTUNITY: "Active opportunity",
-  CLOSED: "Closed"
-};
+    const matchLabels = {
+      POTENTIAL: "Potential",
+      CONTACT_PLANNED: "Contact planned",
+      INTRODUCED: "Introduced",
+      MEETING: "Meeting",
+      ACTIVE_OPPORTUNITY: "Active opportunity",
+      CLOSED: "Closed"
+    };
 
-let organizationOptionsCache = [];
+    let organizationOptionsCache = [];
 
-async function loadOrganizationOptions(){
-  const res = await fetch("/api/organizations");
-  organizationOptionsCache = await res.json();
+    async function loadOrganizationOptions() {
+      const res = await fetch("/api/organizations");
+      organizationOptionsCache = await res.json();
 
-  const options = organizationOptionsCache
-    .map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`)
-    .join("");
+      const options = organizationOptionsCache
+        .map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`)
+        .join("");
 
-  matchForm.elements.organizationAId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
-  matchForm.elements.organizationBId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
-}
+      matchForm.elements.organizationAId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
+      matchForm.elements.organizationBId.innerHTML = `<option value="">Seleccionar...</option>${options}`;
+    }
 
-async function openMatchCreate(prefillOrganizationId = ""){
-  matchForm.reset();
-  matchForm.elements.id.value = "";
-  document.getElementById("matchModalTitle").textContent = "Crear match";
-  matchNotice.textContent = "";
-  await loadOrganizationOptions();
+    async function openMatchCreate(prefillOrganizationId = "") {
+      matchForm.reset();
+      matchForm.elements.id.value = "";
+      document.getElementById("matchModalTitle").textContent = "Crear match";
+      matchNotice.textContent = "";
+      await loadOrganizationOptions();
 
-  if (prefillOrganizationId) {
-    matchForm.elements.organizationAId.value = prefillOrganizationId;
-  }
+      if (prefillOrganizationId) {
+        matchForm.elements.organizationAId.value = prefillOrganizationId;
+      }
 
-  matchModal.classList.add("open");
-}
+      matchModal.classList.add("open");
+    }
 
-async function openMatchEdit(m){
-  matchForm.reset();
-  document.getElementById("matchModalTitle").textContent = "Editar match";
-  matchNotice.textContent = "";
-  await loadOrganizationOptions();
+    async function openMatchEdit(m) {
+      matchForm.reset();
+      document.getElementById("matchModalTitle").textContent = "Editar match";
+      matchNotice.textContent = "";
+      await loadOrganizationOptions();
 
-  matchForm.elements.id.value = m.id;
-  matchForm.elements.organizationAId.value = m.organizationAId;
-  matchForm.elements.organizationBId.value = m.organizationBId;
-  matchForm.elements.reason.value = m.reason || "";
-  matchForm.elements.needOffer.value = m.needOffer || "";
-  matchForm.elements.status.value = m.status || "POTENTIAL";
-  matchForm.elements.mycRole.value = m.mycRole || "";
-  matchForm.elements.nextAction.value = m.nextAction || "";
-  matchForm.elements.notes.value = m.notes || "";
+      matchForm.elements.id.value = m.id;
+      matchForm.elements.organizationAId.value = m.organizationAId;
+      matchForm.elements.organizationBId.value = m.organizationBId;
+      matchForm.elements.reason.value = m.reason || "";
+      matchForm.elements.needOffer.value = m.needOffer || "";
+      matchForm.elements.status.value = m.status || "POTENTIAL";
+      matchForm.elements.mycRole.value = m.mycRole || "";
+      matchForm.elements.nextAction.value = m.nextAction || "";
+      matchForm.elements.notes.value = m.notes || "";
 
-  matchModal.classList.add("open");
-}
+      matchModal.classList.add("open");
+    }
 
-document.getElementById("closeMatchModal").onclick = () => matchModal.classList.remove("open");
+    document.getElementById("closeMatchModal").onclick = () => matchModal.classList.remove("open");
 
-matchForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const fd = new FormData(matchForm);
-  const data = Object.fromEntries(fd.entries());
-  const id = data.id;
-  delete data.id;
+    matchForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const fd = new FormData(matchForm);
+      const data = Object.fromEntries(fd.entries());
+      const id = data.id;
+      delete data.id;
 
-  matchNotice.textContent = "Guardando...";
+      matchNotice.textContent = "Guardando...";
 
-  const res = await fetch(id ? `/api/matches/${id}` : "/api/matches", {
-    method: id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+      const res = await fetch(id ? `/api/matches/${id}` : "/api/matches", {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
 
-  const out = await res.json();
+      const out = await res.json();
 
-  if (!res.ok) {
-    matchNotice.textContent = out.error || "Ocurrió un error.";
-    return;
-  }
+      if (!res.ok) {
+        matchNotice.textContent = out.error || "Ocurrió un error.";
+        return;
+      }
 
-  matchNotice.textContent = id ? "Match actualizado." : "Match creado.";
-  setTimeout(() => {
-    matchModal.classList.remove("open");
-    route();
-  }, 300);
-});
+      matchNotice.textContent = id ? "Match actualizado." : "Match creado.";
+      setTimeout(() => {
+        matchModal.classList.remove("open");
+        route();
+      }, 300);
+    });
 
-async function deleteMatch(id){
-  if (!confirm("¿Eliminar este match?")) return;
-  const res = await fetch(`/api/matches/${id}`, { method: "DELETE" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
-  route();
-}
+    async function deleteMatch(id) {
+      if (!confirm("¿Eliminar este match?")) return;
+      const res = await fetch(`/api/matches/${id}`, { method: "DELETE" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+      route();
+    }
 
-async function matchesPage(){
-  setActive("matches");
-  app.innerHTML = `
+    async function matchesPage() {
+      setActive("matches");
+      app.innerHTML = `
     <div class="top">
       <div>
         <h1>Matches</h1>
@@ -920,16 +1497,16 @@ async function matchesPage(){
     </div>
     <div id="matchList" class="match-grid"></div>`;
 
-  const res = await fetch("/api/matches");
-  const items = await res.json();
-  const list = document.getElementById("matchList");
+      const res = await fetch("/api/matches");
+      const items = await res.json();
+      const list = document.getElementById("matchList");
 
-  if (!items.length) {
-    list.innerHTML = `<section class="panel empty">Todavía no hay matches registrados.</section>`;
-    return;
-  }
+      if (!items.length) {
+        list.innerHTML = `<section class="panel empty">Todavía no hay matches registrados.</section>`;
+        return;
+      }
 
-  list.innerHTML = items.map(m => `
+      list.innerHTML = items.map(m => `
     <section class="match-card">
       <div class="match-pair">
         ${esc(m.organizationA?.name || "—")}
@@ -952,108 +1529,108 @@ async function matchesPage(){
       </div>
     </section>
   `).join("");
-}
+    }
 
 
 
-const taskModal = document.getElementById("taskModal");
-const taskForm = document.getElementById("taskForm");
-const taskNotice = document.getElementById("taskNotice");
-let taskOrgCache = [];
+    const taskModal = document.getElementById("taskModal");
+    const taskForm = document.getElementById("taskForm");
+    const taskNotice = document.getElementById("taskNotice");
+    let taskOrgCache = [];
 
-async function loadTaskOrganizations(){
-  const res = await fetch("/api/organizations");
-  taskOrgCache = await res.json();
-  taskForm.elements.organizationId.innerHTML =
-    `<option value="">Sin organización específica</option>` +
-    taskOrgCache.map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`).join("");
-}
+    async function loadTaskOrganizations() {
+      const res = await fetch("/api/organizations");
+      taskOrgCache = await res.json();
+      taskForm.elements.organizationId.innerHTML =
+        `<option value="">Sin organización específica</option>` +
+        taskOrgCache.map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`).join("");
+    }
 
-async function openTaskCreate(prefillOrganizationId = ""){
-  taskForm.reset();
-  taskForm.elements.id.value = "";
-  taskForm.elements.completed.value = "false";
-  document.getElementById("taskModalTitle").textContent = "Nuevo seguimiento";
-  taskNotice.textContent = "";
-  await loadTaskOrganizations();
-  if (prefillOrganizationId) taskForm.elements.organizationId.value = prefillOrganizationId;
-  taskModal.classList.add("open");
-}
+    async function openTaskCreate(prefillOrganizationId = "") {
+      taskForm.reset();
+      taskForm.elements.id.value = "";
+      taskForm.elements.completed.value = "false";
+      document.getElementById("taskModalTitle").textContent = "Nuevo seguimiento";
+      taskNotice.textContent = "";
+      await loadTaskOrganizations();
+      if (prefillOrganizationId) taskForm.elements.organizationId.value = prefillOrganizationId;
+      taskModal.classList.add("open");
+    }
 
-async function openTaskEdit(t){
-  taskForm.reset();
-  document.getElementById("taskModalTitle").textContent = "Editar seguimiento";
-  taskNotice.textContent = "";
-  await loadTaskOrganizations();
+    async function openTaskEdit(t) {
+      taskForm.reset();
+      document.getElementById("taskModalTitle").textContent = "Editar seguimiento";
+      taskNotice.textContent = "";
+      await loadTaskOrganizations();
 
-  taskForm.elements.id.value = t.id;
-  taskForm.elements.organizationId.value = t.organizationId || "";
-  taskForm.elements.title.value = t.title || "";
-  taskForm.elements.description.value = t.description || "";
-  taskForm.elements.ownerName.value = t.ownerName || "";
-  taskForm.elements.dueDate.value = t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : "";
-  taskForm.elements.completed.value = t.completed ? "true" : "false";
+      taskForm.elements.id.value = t.id;
+      taskForm.elements.organizationId.value = t.organizationId || "";
+      taskForm.elements.title.value = t.title || "";
+      taskForm.elements.description.value = t.description || "";
+      taskForm.elements.ownerName.value = t.ownerName || "";
+      taskForm.elements.dueDate.value = t.dueDate ? new Date(t.dueDate).toISOString().slice(0, 10) : "";
+      taskForm.elements.completed.value = t.completed ? "true" : "false";
 
-  taskModal.classList.add("open");
-}
+      taskModal.classList.add("open");
+    }
 
-document.getElementById("closeTaskModal").onclick = () => taskModal.classList.remove("open");
+    document.getElementById("closeTaskModal").onclick = () => taskModal.classList.remove("open");
 
-taskForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const fd = new FormData(taskForm);
-  const data = Object.fromEntries(fd.entries());
-  const id = data.id;
-  delete data.id;
-  data.completed = data.completed === "true";
+    taskForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const fd = new FormData(taskForm);
+      const data = Object.fromEntries(fd.entries());
+      const id = data.id;
+      delete data.id;
+      data.completed = data.completed === "true";
 
-  taskNotice.textContent = "Guardando...";
+      taskNotice.textContent = "Guardando...";
 
-  const res = await fetch(id ? `/api/tasks/${id}` : "/api/tasks", {
-    method: id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+      const res = await fetch(id ? `/api/tasks/${id}` : "/api/tasks", {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
 
-  const out = await res.json();
+      const out = await res.json();
 
-  if (!res.ok) {
-    taskNotice.textContent = out.error || "Ocurrió un error.";
-    return;
-  }
+      if (!res.ok) {
+        taskNotice.textContent = out.error || "Ocurrió un error.";
+        return;
+      }
 
-  taskNotice.textContent = id ? "Seguimiento actualizado." : "Seguimiento creado.";
-  setTimeout(() => {
-    taskModal.classList.remove("open");
-    route();
-  }, 300);
-});
+      taskNotice.textContent = id ? "Seguimiento actualizado." : "Seguimiento creado.";
+      setTimeout(() => {
+        taskModal.classList.remove("open");
+        route();
+      }, 300);
+    });
 
-async function toggleTask(id){
-  const res = await fetch(`/api/tasks/${id}/toggle`, { method: "PATCH" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo cambiar el estado.");
-  route();
-}
+    async function toggleTask(id) {
+      const res = await fetch(`/api/tasks/${id}/toggle`, { method: "PATCH" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo cambiar el estado.");
+      route();
+    }
 
-async function deleteTask(id){
-  if (!confirm("¿Eliminar este seguimiento?")) return;
-  const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-  const out = await res.json();
-  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
-  route();
-}
+    async function deleteTask(id) {
+      if (!confirm("¿Eliminar este seguimiento?")) return;
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      const out = await res.json();
+      if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+      route();
+    }
 
-function taskStatus(t){
-  if (t.completed) return { label:"Completado", cls:"completed" };
-  if (t.dueDate && new Date(t.dueDate) < new Date()) return { label:"Vencido", cls:"overdue" };
-  return { label:"Pendiente", cls:"pending" };
-}
+    function taskStatus(t) {
+      if (t.completed) return { label: "Completado", cls: "completed" };
+      if (t.dueDate && new Date(t.dueDate) < new Date()) return { label: "Vencido", cls: "overdue" };
+      return { label: "Pendiente", cls: "pending" };
+    }
 
-async function tasksPage(status = ""){
-  setActive("tasks");
+    async function tasksPage(status = "") {
+      setActive("tasks");
 
-  app.innerHTML = `
+      app.innerHTML = `
     <div class="top">
       <div>
         <h1>Seguimientos</h1>
@@ -1063,11 +1640,11 @@ async function tasksPage(status = ""){
     </div>
     <section class="panel">
       <div class="task-toolbar">
-        <button class="secondary ${status===""?"active":""}" onclick="tasksPage('')">Todos</button>
-        <button class="secondary ${status==="pending"?"active":""}" onclick="tasksPage('pending')">Pendientes</button>
-        <button class="secondary ${status==="overdue"?"active":""}" onclick="tasksPage('overdue')">Vencidos</button>
-        <button class="secondary ${status==="upcoming"?"active":""}" onclick="tasksPage('upcoming')">Próximos</button>
-        <button class="secondary ${status==="completed"?"active":""}" onclick="tasksPage('completed')">Completados</button>
+        <button class="secondary ${status === "" ? "active" : ""}" onclick="tasksPage('')">Todos</button>
+        <button class="secondary ${status === "pending" ? "active" : ""}" onclick="tasksPage('pending')">Pendientes</button>
+        <button class="secondary ${status === "overdue" ? "active" : ""}" onclick="tasksPage('overdue')">Vencidos</button>
+        <button class="secondary ${status === "upcoming" ? "active" : ""}" onclick="tasksPage('upcoming')">Próximos</button>
+        <button class="secondary ${status === "completed" ? "active" : ""}" onclick="tasksPage('completed')">Completados</button>
       </div>
       <table>
         <thead>
@@ -1084,19 +1661,19 @@ async function tasksPage(status = ""){
       </table>
     </section>`;
 
-  const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch("/api/tasks" + query);
-  const items = await res.json();
-  const tbody = document.getElementById("taskRows");
+      const query = status ? `?status=${encodeURIComponent(status)}` : "";
+      const res = await fetch("/api/tasks" + query);
+      const items = await res.json();
+      const tbody = document.getElementById("taskRows");
 
-  if (!items.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay seguimientos en esta vista.</td></tr>`;
-    return;
-  }
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay seguimientos en esta vista.</td></tr>`;
+        return;
+      }
 
-  tbody.innerHTML = items.map(t => {
-    const s = taskStatus(t);
-    return `
+      tbody.innerHTML = items.map(t => {
+        const s = taskStatus(t);
+        return `
       <tr class="task-row ${s.cls}">
         <td>
           <strong>${esc(t.title)}</strong>
@@ -1114,13 +1691,13 @@ async function tasksPage(status = ""){
           </div>
         </td>
       </tr>`;
-  }).join("");
-}
+      }).join("");
+    }
 
 
-async function dashboard(){
-  setActive("dashboard");
-  app.innerHTML = `
+    async function dashboard() {
+      setActive("dashboard");
+      app.innerHTML = `
     <div class="top">
       <div>
         <h1>Dashboard</h1>
@@ -1182,72 +1759,72 @@ async function dashboard(){
       </table>
     </section>`;
 
-  const res = await fetch("/api/dashboard");
-  const d = await res.json();
+      const res = await fetch("/api/dashboard");
+      const d = await res.json();
 
-  if (!res.ok) {
-    app.innerHTML = `<section class="panel">No se pudo cargar el dashboard.</section>`;
-    return;
-  }
+      if (!res.ok) {
+        app.innerHTML = `<section class="panel">No se pudo cargar el dashboard.</section>`;
+        return;
+      }
 
-  document.getElementById("mTotal").textContent = d.totalOrganizations;
-  document.getElementById("mNew").textContent = d.newLeadsThisMonth;
-  document.getElementById("mOpps").textContent = d.activeOpportunities;
-  document.getElementById("mMeetings").textContent = d.meetingsTotal;
-  document.getElementById("mProposals").textContent = d.proposalsSent;
-  document.getElementById("mClients").textContent = d.clientsWon;
-  document.getElementById("mMatches").textContent = d.openMatches;
-  document.getElementById("mOverdue").textContent = d.overdueFollowUps;
-  document.getElementById("mEcuEu").textContent = d.ecuadorToEurope;
-  document.getElementById("mEuEcu").textContent = d.europeToEcuador;
-  document.getElementById("mToday").textContent = d.dueTodayFollowUps;
-  document.getElementById("mUpcoming").textContent = d.upcomingFollowUps;
+      document.getElementById("mTotal").textContent = d.totalOrganizations;
+      document.getElementById("mNew").textContent = d.newLeadsThisMonth;
+      document.getElementById("mOpps").textContent = d.activeOpportunities;
+      document.getElementById("mMeetings").textContent = d.meetingsTotal;
+      document.getElementById("mProposals").textContent = d.proposalsSent;
+      document.getElementById("mClients").textContent = d.clientsWon;
+      document.getElementById("mMatches").textContent = d.openMatches;
+      document.getElementById("mOverdue").textContent = d.overdueFollowUps;
+      document.getElementById("mEcuEu").textContent = d.ecuadorToEurope;
+      document.getElementById("mEuEcu").textContent = d.europeToEcuador;
+      document.getElementById("mToday").textContent = d.dueTodayFollowUps;
+      document.getElementById("mUpcoming").textContent = d.upcomingFollowUps;
 
-  function renderBars(targetId, rows, labelFn){
-    const target = document.getElementById(targetId);
-    if (!rows || !rows.length) {
-      target.innerHTML = `<div class="empty">Sin datos todavía.</div>`;
-      return;
-    }
-    const max = Math.max(...rows.map(x => x.count), 1);
-    target.innerHTML = rows.map(x => `
+      function renderBars(targetId, rows, labelFn) {
+        const target = document.getElementById(targetId);
+        if (!rows || !rows.length) {
+          target.innerHTML = `<div class="empty">Sin datos todavía.</div>`;
+          return;
+        }
+        const max = Math.max(...rows.map(x => x.count), 1);
+        target.innerHTML = rows.map(x => `
       <div class="mini-row">
         <div>
           <div>${esc(labelFn(x))}</div>
-          <div class="mini-bar"><div class="mini-fill" style="width:${Math.max(5, Math.round((x.count/max)*100))}%"></div></div>
+          <div class="mini-bar"><div class="mini-fill" style="width:${Math.max(5, Math.round((x.count / max) * 100))}%"></div></div>
         </div>
         <strong>${x.count}</strong>
       </div>`).join("");
-  }
+      }
 
-  renderBars("pipelineSummary", d.pipeline || [], x => pipelineLabels[x.stage] || x.stage);
-  renderBars("sectorSummary", d.topSectors || [], x => x.label);
-  renderBars("countrySummary", d.topCountries || [], x => x.label);
-  renderBars("potentialSummary", d.strategicPotential || [], x => ({
-    HIGH:"Alto", MEDIUM:"Medio", LOW:"Bajo", UNDEFINED:"Sin definir"
-  }[x.level] || x.level));
+      renderBars("pipelineSummary", d.pipeline || [], x => pipelineLabels[x.stage] || x.stage);
+      renderBars("sectorSummary", d.topSectors || [], x => x.label);
+      renderBars("countrySummary", d.topCountries || [], x => x.label);
+      renderBars("potentialSummary", d.strategicPotential || [], x => ({
+        HIGH: "Alto", MEDIUM: "Medio", LOW: "Bajo", UNDEFINED: "Sin definir"
+      }[x.level] || x.level));
 
-  const tbody = document.getElementById("recent");
-  tbody.innerHTML = d.recentOrganizations?.length
-    ? d.recentOrganizations.map(o => `
+      const tbody = document.getElementById("recent");
+      tbody.innerHTML = d.recentOrganizations?.length
+        ? d.recentOrganizations.map(o => `
       <tr class="clickable" onclick="goto('organization/${o.id}')">
         <td><strong>${esc(o.name)}</strong></td>
         <td>${esc(o.country)}</td>
         <td>${esc(o.sector)}</td>
-        <td>${esc(labels[o.direction]||o.direction)}</td>
-        <td><span class="pill">${esc((pipelineLabels[o.pipelineStage]||o.pipelineStage))}</span></td>
+        <td>${esc(labels[o.direction] || o.direction)}</td>
+        <td><span class="pill">${esc((pipelineLabels[o.pipelineStage] || o.pipelineStage))}</span></td>
         <td>${esc(o.nextAction || "—")}${o.nextActionDate ? `<br><span class="muted">${fmtDate(o.nextActionDate)}</span>` : ""}</td>
       </tr>`).join("")
-    : `<tr><td colspan="6">Todavía no hay organizaciones registradas.</td></tr>`;
-}
+        : `<tr><td colspan="6">Todavía no hay organizaciones registradas.</td></tr>`;
+    }
 
-function row(o){
-  return `<tr class="clickable" onclick="goto('organization/${o.id}')"><td><strong>${esc(o.name)}</strong></td><td>${esc(o.country)}</td><td>${esc(o.sector)}</td><td>${esc(labels[o.direction]||o.direction)}</td><td><span class="pill">${esc(o.pipelineStage.replaceAll("_"," "))}</span></td></tr>`;
-}
+    function row(o) {
+      return `<tr class="clickable" onclick="goto('organization/${o.id}')"><td><strong>${esc(o.name)}</strong></td><td>${esc(o.country)}</td><td>${esc(o.sector)}</td><td>${esc(labels[o.direction] || o.direction)}</td><td><span class="pill">${esc(o.pipelineStage.replaceAll("_", " "))}</span></td></tr>`;
+    }
 
-async function organizations(){
-  setActive("organizations");
-  app.innerHTML = `
+    async function organizations() {
+      setActive("organizations");
+      app.innerHTML = `
     <div class="top">
       <div>
         <h1>Organizaciones</h1>
@@ -1280,7 +1857,7 @@ async function organizations(){
 
         <select id="stage">
           <option value="">Todo pipeline</option>
-          ${["IDENTIFIED","CONTACTED","RESPONDED","MEETING","QUALIFIED_OPPORTUNITY","PROPOSAL","NEGOTIATION","CLIENT","CLOSED","NOT_INTERESTED","NOT_QUALIFIED","ON_HOLD"].map(x=>`<option value="${x}">${pipelineLabels[x]||x}</option>`).join("")}
+          ${["IDENTIFIED", "CONTACTED", "RESPONDED", "MEETING", "QUALIFIED_OPPORTUNITY", "PROPOSAL", "NEGOTIATION", "CLIENT", "CLOSED", "NOT_INTERESTED", "NOT_QUALIFIED", "ON_HOLD"].map(x => `<option value="${x}">${pipelineLabels[x] || x}</option>`).join("")}
         </select>
 
         <select id="leadSource"><option value="">Todas las fuentes</option></select>
@@ -1315,151 +1892,151 @@ async function organizations(){
       </table>
     </section>`;
 
-  const q=document.getElementById("q");
-  const country=document.getElementById("country");
-  const direction=document.getElementById("direction");
-  const sector=document.getElementById("sector");
-  const need=document.getElementById("need");
-  const potential=document.getElementById("potential");
-  const stage=document.getElementById("stage");
-  const leadSource=document.getElementById("leadSource");
-  const followUpFrom=document.getElementById("followUpFrom");
-  const followUpTo=document.getElementById("followUpTo");
+      const q = document.getElementById("q");
+      const country = document.getElementById("country");
+      const direction = document.getElementById("direction");
+      const sector = document.getElementById("sector");
+      const need = document.getElementById("need");
+      const potential = document.getElementById("potential");
+      const stage = document.getElementById("stage");
+      const leadSource = document.getElementById("leadSource");
+      const followUpFrom = document.getElementById("followUpFrom");
+      const followUpTo = document.getElementById("followUpTo");
 
-  const optionsRes = await fetch("/api/organizations/filter-options");
-  const options = await optionsRes.json();
+      const optionsRes = await fetch("/api/organizations/filter-options");
+      const options = await optionsRes.json();
 
-  function fillSelect(el, values){
-    values.forEach(v => {
-      const op = document.createElement("option");
-      op.value = v;
-      op.textContent = v;
-      el.appendChild(op);
-    });
-  }
+      function fillSelect(el, values) {
+        values.forEach(v => {
+          const op = document.createElement("option");
+          op.value = v;
+          op.textContent = v;
+          el.appendChild(op);
+        });
+      }
 
-  if (optionsRes.ok) {
-    fillSelect(country, options.countries || []);
-    fillSelect(sector, options.sectors || []);
-    fillSelect(need, options.needs || []);
-    fillSelect(leadSource, options.leadSources || []);
-  }
+      if (optionsRes.ok) {
+        fillSelect(country, options.countries || []);
+        fillSelect(sector, options.sectors || []);
+        fillSelect(need, options.needs || []);
+        fillSelect(leadSource, options.leadSources || []);
+      }
 
-  let timer;
-  async function load(){
-    const p=new URLSearchParams();
-    if(q.value)p.set("q",q.value);
-    if(country.value)p.set("country",country.value);
-    if(direction.value)p.set("direction",direction.value);
-    if(sector.value)p.set("sector",sector.value);
-    if(need.value)p.set("need",need.value);
-    if(potential.value)p.set("strategicPotential",potential.value);
-    if(stage.value)p.set("pipelineStage",stage.value);
-    if(leadSource.value)p.set("leadSource",leadSource.value);
-    if(followUpFrom.value)p.set("followUpFrom",followUpFrom.value);
-    if(followUpTo.value)p.set("followUpTo",followUpTo.value);
+      let timer;
+      async function load() {
+        const p = new URLSearchParams();
+        if (q.value) p.set("q", q.value);
+        if (country.value) p.set("country", country.value);
+        if (direction.value) p.set("direction", direction.value);
+        if (sector.value) p.set("sector", sector.value);
+        if (need.value) p.set("need", need.value);
+        if (potential.value) p.set("strategicPotential", potential.value);
+        if (stage.value) p.set("pipelineStage", stage.value);
+        if (leadSource.value) p.set("leadSource", leadSource.value);
+        if (followUpFrom.value) p.set("followUpFrom", followUpFrom.value);
+        if (followUpTo.value) p.set("followUpTo", followUpTo.value);
 
-    const res=await fetch("/api/organizations?"+p.toString());
-    const items=await res.json();
+        const res = await fetch("/api/organizations?" + p.toString());
+        const items = await res.json();
 
-    if(!res.ok){
-      document.getElementById("orgRows").innerHTML=`<tr><td colspan="7">No se pudieron cargar los resultados.</td></tr>`;
-      return;
-    }
+        if (!res.ok) {
+          document.getElementById("orgRows").innerHTML = `<tr><td colspan="7">No se pudieron cargar los resultados.</td></tr>`;
+          return;
+        }
 
-    const activeFilters = [
-      q.value,country.value,direction.value,sector.value,need.value,potential.value,
-      stage.value,leadSource.value,followUpFrom.value,followUpTo.value
-    ].filter(Boolean).length;
+        const activeFilters = [
+          q.value, country.value, direction.value, sector.value, need.value, potential.value,
+          stage.value, leadSource.value, followUpFrom.value, followUpTo.value
+        ].filter(Boolean).length;
 
-    document.getElementById("resultCount").textContent =
-      `${items.length} organización(es) encontradas${activeFilters ? ` · ${activeFilters} filtro(s) activo(s)` : ""}`;
+        document.getElementById("resultCount").textContent =
+          `${items.length} organización(es) encontradas${activeFilters ? ` · ${activeFilters} filtro(s) activo(s)` : ""}`;
 
-    document.getElementById("orgRows").innerHTML = items.length
-      ? items.map(o=>`
+        document.getElementById("orgRows").innerHTML = items.length
+          ? items.map(o => `
         <tr class="clickable" onclick="goto('organization/${o.id}')">
           <td><strong>${esc(o.name)}</strong></td>
           <td>${esc(o.country)}</td>
           <td>${esc(o.sector)}</td>
-          <td>${esc(labels[o.direction]||o.direction)}</td>
-          <td>${esc(labels[o.strategicPotential]||"—")}</td>
-          <td><span class="pill">${esc(pipelineLabels[o.pipelineStage]||o.pipelineStage)}</span></td>
-          <td>${esc(o.nextAction||"—")}${o.nextActionDate?`<br><span class="muted">${fmtDate(o.nextActionDate)}</span>`:""}</td>
+          <td>${esc(labels[o.direction] || o.direction)}</td>
+          <td>${esc(labels[o.strategicPotential] || "—")}</td>
+          <td><span class="pill">${esc(pipelineLabels[o.pipelineStage] || o.pipelineStage)}</span></td>
+          <td>${esc(o.nextAction || "—")}${o.nextActionDate ? `<br><span class="muted">${fmtDate(o.nextActionDate)}</span>` : ""}</td>
         </tr>`).join("")
-      : `<tr><td colspan="7" class="empty">No hay resultados con estos filtros.</td></tr>`;
-  }
+          : `<tr><td colspan="7" class="empty">No hay resultados con estos filtros.</td></tr>`;
+      }
 
-  q.oninput=()=>{clearTimeout(timer);timer=setTimeout(load,250)};
-  [country,direction,sector,need,potential,stage,leadSource,followUpFrom,followUpTo].forEach(x=>x.onchange=load);
+      q.oninput = () => { clearTimeout(timer); timer = setTimeout(load, 250) };
+      [country, direction, sector, need, potential, stage, leadSource, followUpFrom, followUpTo].forEach(x => x.onchange = load);
 
-  document.getElementById("clearFilters").onclick=()=>{
-    q.value="";
-    country.value="";
-    direction.value="";
-    sector.value="";
-    need.value="";
-    potential.value="";
-    stage.value="";
-    leadSource.value="";
-    followUpFrom.value="";
-    followUpTo.value="";
-    load();
-  };
+      document.getElementById("clearFilters").onclick = () => {
+        q.value = "";
+        country.value = "";
+        direction.value = "";
+        sector.value = "";
+        need.value = "";
+        potential.value = "";
+        stage.value = "";
+        leadSource.value = "";
+        followUpFrom.value = "";
+        followUpTo.value = "";
+        load();
+      };
 
-  load();
-}
+      load();
+    }
 
-function section(title, body){return `<section class="panel"><h2>${title}</h2>${body}</section>`}
+    function section(title, body) { return `<section class="panel"><h2>${title}</h2>${body}</section>` }
 
-async function organizationProfile(id){
-  setActive("organizations");
-  const res=await fetch(`/api/organizations/${id}`); const o=await res.json();
-  if(!res.ok){app.innerHTML=`<div class="panel">${esc(o.error||"No se pudo cargar.")}</div>`;return}
-  const contacts=o.contacts||[], interactions=o.interactions||[], opps=o.opportunities||[], tasks=o.tasks||[];
-  const matches=[...(o.matchesAsA||[]).map(m=>({m,other:m.organizationB})),...(o.matchesAsB||[]).map(m=>({m,other:m.organizationA}))];
-  app.innerHTML=`
+    async function organizationProfile(id) {
+      setActive("organizations");
+      const res = await fetch(`/api/organizations/${id}`); const o = await res.json();
+      if (!res.ok) { app.innerHTML = `<div class="panel">${esc(o.error || "No se pudo cargar.")}</div>`; return }
+      const contacts = o.contacts || [], interactions = o.interactions || [], opps = o.opportunities || [], tasks = o.tasks || [];
+      const matches = [...(o.matchesAsA || []).map(m => ({ m, other: m.organizationB })), ...(o.matchesAsB || []).map(m => ({ m, other: m.organizationA }))];
+      app.innerHTML = `
   <span class="back" onclick="goto('organizations')">← Volver a organizaciones</span>
   <div class="profile-head">
-    <div><div class="profile-title">${esc(o.name)}</div><div class="muted">${esc(o.organizationType)} · ${esc(o.country)}${o.cityRegion?" · "+esc(o.cityRegion):""}</div></div>
+    <div><div class="profile-title">${esc(o.name)}</div><div class="muted">${esc(o.organizationType)} · ${esc(o.country)}${o.cityRegion ? " · " + esc(o.cityRegion) : ""}</div></div>
     <button class="primary" id="editBtn">Editar organización</button>
   </div>
   <div class="profile-grid">
     <div class="stack">
-      ${section("Información comercial",`
-        <div class="kv"><strong>Dirección</strong><span>${esc(labels[o.direction]||o.direction)}</span></div>
-        <div class="kv"><strong>Sector</strong><span>${esc(o.sector)}${o.subsector?" / "+esc(o.subsector):""}</span></div>
-        <div class="kv"><strong>Potencial</strong><span>${esc(labels[o.strategicPotential]||"Sin definir")}</span></div>
-        <div class="kv"><strong>Pipeline</strong><span class="pill">${esc(o.pipelineStage.replaceAll("_"," "))}</span></div>
-        <div class="kv"><strong>Fuente lead</strong><span>${esc(o.leadSource||"—")}</span></div>
+      ${section("Información comercial", `
+        <div class="kv"><strong>Dirección</strong><span>${esc(labels[o.direction] || o.direction)}</span></div>
+        <div class="kv"><strong>Sector</strong><span>${esc(o.sector)}${o.subsector ? " / " + esc(o.subsector) : ""}</span></div>
+        <div class="kv"><strong>Potencial</strong><span>${esc(labels[o.strategicPotential] || "Sin definir")}</span></div>
+        <div class="kv"><strong>Pipeline</strong><span class="pill">${esc(o.pipelineStage.replaceAll("_", " "))}</span></div>
+        <div class="kv"><strong>Fuente lead</strong><span>${esc(o.leadSource || "—")}</span></div>
         <div class="kv"><strong>Última interacción</strong><span>${fmtDate(o.lastInteractionAt)}</span></div>
       `)}
-      ${section("Qué ofrece",`<p>${esc(o.offerSummary||"Sin información registrada.")}</p>`)}
-      ${section("Qué necesita",o.needs?.length?`<div class="tags">${o.needs.map(n=>`<span class="tag">${esc(n)}</span>`).join("")}</div>`:`<div class="empty">Sin necesidades registradas.</div>`)}
-      ${section("Mercados",`
-        <div class="kv"><strong>Actuales</strong><span>${esc((o.currentMarkets||[]).join(", ")||"—")}</span></div>
-        <div class="kv"><strong>Objetivo</strong><span>${esc((o.targetMarkets||[]).join(", ")||"—")}</span></div>
+      ${section("Qué ofrece", `<p>${esc(o.offerSummary || "Sin información registrada.")}</p>`)}
+      ${section("Qué necesita", o.needs?.length ? `<div class="tags">${o.needs.map(n => `<span class="tag">${esc(n)}</span>`).join("")}</div>` : `<div class="empty">Sin necesidades registradas.</div>`)}
+      ${section("Mercados", `
+        <div class="kv"><strong>Actuales</strong><span>${esc((o.currentMarkets || []).join(", ") || "—")}</span></div>
+        <div class="kv"><strong>Objetivo</strong><span>${esc((o.targetMarkets || []).join(", ") || "—")}</span></div>
       `)}
-      ${section("Contactos",`
+      ${section("Contactos", `
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="primary" onclick="openContactCreate('${o.id}')">+ Añadir contacto</button>
         </div>
-        ${contacts.length ? contacts.map(c=>`
+        ${contacts.length ? contacts.map(c => `
           <div class="kv">
-            <strong>${esc(c.firstName+" "+c.lastName)}${c.isPrimary?' · Principal':''}</strong>
+            <strong>${esc(c.firstName + " " + c.lastName)}${c.isPrimary ? ' · Principal' : ''}</strong>
             <span>
-              ${esc(c.jobTitle||"—")}<br>
-              <span class="muted">${esc(c.email||"")}${c.email&&c.phoneWhatsapp?" · ":""}${esc(c.phoneWhatsapp||"")}</span><br>
-              <span class="muted">${esc(c.preferredLanguage||"")}</span><br>
+              ${esc(c.jobTitle || "—")}<br>
+              <span class="muted">${esc(c.email || "")}${c.email && c.phoneWhatsapp ? " · " : ""}${esc(c.phoneWhatsapp || "")}</span><br>
+              <span class="muted">${esc(c.preferredLanguage || "")}</span><br>
               <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick='openContactEdit(${JSON.stringify(c)})'>Editar</button>
               <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="deleteContact('${c.id}')">Eliminar</button>
             </span>
           </div>`).join("") : `<div class="empty">Todavía no hay contactos.</div>`}
       `)}
-      ${section("Historial de interacciones",`
+      ${section("Historial de interacciones", `
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="primary" onclick="openInteractionCreate('${o.id}')">+ Añadir interacción</button>
         </div>
-        ${interactions.length ? interactions.map(i=>`
+        ${interactions.length ? interactions.map(i => `
           <div class="kv">
             <strong>${fmtDate(i.date)} · ${esc(interactionLabels[i.type] || i.type)}</strong>
             <span>
@@ -1475,18 +2052,18 @@ async function organizationProfile(id){
       `)}
     </div>
     <div class="stack">
-      ${section("Próxima acción",`<p><strong>${esc(o.nextAction||"Sin próxima acción")}</strong></p><div class="muted">${fmtDate(o.nextActionDate)}</div>`)}
-      ${section("Enlaces",`
-        ${o.website?`<p><a class="link" target="_blank" href="${esc(o.website)}">Sitio web ↗</a></p>`:""}
-        ${o.linkedin?`<p><a class="link" target="_blank" href="${esc(o.linkedin)}">LinkedIn ↗</a></p>`:""}
-        ${o.instagram?`<p><a class="link" target="_blank" href="${esc(o.instagram)}">Instagram ↗</a></p>`:""}
-        ${!o.website&&!o.linkedin&&!o.instagram?`<div class="empty">Sin enlaces.</div>`:""}
+      ${section("Próxima acción", `<p><strong>${esc(o.nextAction || "Sin próxima acción")}</strong></p><div class="muted">${fmtDate(o.nextActionDate)}</div>`)}
+      ${section("Enlaces", `
+        ${o.website ? `<p><a class="link" target="_blank" href="${esc(o.website)}">Sitio web ↗</a></p>` : ""}
+        ${o.linkedin ? `<p><a class="link" target="_blank" href="${esc(o.linkedin)}">LinkedIn ↗</a></p>` : ""}
+        ${o.instagram ? `<p><a class="link" target="_blank" href="${esc(o.instagram)}">Instagram ↗</a></p>` : ""}
+        ${!o.website && !o.linkedin && !o.instagram ? `<div class="empty">Sin enlaces.</div>` : ""}
       `)}
-      ${section("Oportunidades",`
+      ${section("Oportunidades", `
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="primary" onclick="openOpportunityCreate('${o.id}')">+ Añadir oportunidad</button>
         </div>
-        ${opps.length ? opps.map(x=>`
+        ${opps.length ? opps.map(x => `
           <div class="kv">
             <strong>${esc(x.title)}</strong>
             <span>
@@ -1499,11 +2076,11 @@ async function organizationProfile(id){
             </span>
           </div>`).join("") : `<div class="empty">Sin oportunidades.</div>`}
       `)}
-      ${section("Matches",`
+      ${section("Matches", `
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="primary" onclick="openMatchCreate('${o.id}')">+ Crear match</button>
         </div>
-        ${matches.length ? matches.map(x=>`
+        ${matches.length ? matches.map(x => `
           <div class="kv">
             <strong>${esc(x.other.name)}</strong>
             <span>
@@ -1513,13 +2090,13 @@ async function organizationProfile(id){
             </span>
           </div>`).join("") : `<div class="empty">Sin matches.</div>`}
       `)}
-      ${section("Seguimientos",`
+      ${section("Seguimientos", `
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <button class="primary" onclick="openTaskCreate('${o.id}')">+ Añadir seguimiento</button>
         </div>
-        ${tasks.length ? tasks.map(t=>{
-          const s = taskStatus(t);
-          return `
+        ${tasks.length ? tasks.map(t => {
+        const s = taskStatus(t);
+        return `
             <div class="kv">
               <strong>${esc(t.title)}</strong>
               <span>
@@ -1530,26 +2107,27 @@ async function organizationProfile(id){
                 <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="toggleTask('${t.id}')">${t.completed ? "Reabrir" : "Completar"}</button>
               </span>
             </div>`;
-        }).join("") : `<div class="empty">Sin seguimientos.</div>`}
+      }).join("") : `<div class="empty">Sin seguimientos.</div>`}
       `)}
     </div>
   </div>`;
-  document.getElementById("editBtn").onclick=()=>openEdit(o);
-}
+      document.getElementById("editBtn").onclick = () => openEdit(o);
+    }
 
-async function route(){
-  const h=(location.hash||"#dashboard").slice(1);
-  if(h==="dashboard") return dashboard();
-  if(h==="organizations") return organizations();
-  if(h==="contacts") return contactsPage();
-  if(h==="pipeline") return pipelinePage();
-  if(h==="matches") return matchesPage();
-  if(h==="tasks") return tasksPage();
-  if(h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
-  return dashboard();
-}
-window.addEventListener("hashchange",route);
-route();
-</script>
+    async function route() {
+      const h = (location.hash || "#dashboard").slice(1);
+      if (h === "dashboard") return dashboard();
+      if (h === "organizations") return organizations();
+      if (h === "contacts") return contactsPage();
+      if (h === "pipeline") return pipelinePage();
+      if (h === "matches") return matchesPage();
+      if (h === "tasks") return tasksPage();
+      if (h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
+      return dashboard();
+    }
+    window.addEventListener("hashchange", route);
+    route();
+  </script>
 </body>
+
 </html>
