@@ -809,6 +809,182 @@ app.delete("/api/matches/:id", async (req, res) => {
 });
 
 
+
+app.get("/api/tasks", async (req, res) => {
+  try {
+    const status = String(req.query.status || "").trim();
+    const now = new Date();
+
+    const where: any = {};
+
+    if (status === "pending") {
+      where.completed = false;
+    } else if (status === "completed") {
+      where.completed = true;
+    } else if (status === "overdue") {
+      where.completed = false;
+      where.dueDate = { lt: now };
+    } else if (status === "upcoming") {
+      where.completed = false;
+      where.dueDate = { gte: now };
+    }
+
+    const tasks = await prisma.task.findMany({
+      where,
+      include: { organization: true },
+      orderBy: [
+        { completed: "asc" },
+        { dueDate: "asc" },
+        { createdAt: "desc" }
+      ]
+    });
+
+    res.json(tasks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron cargar los seguimientos." });
+  }
+});
+
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const {
+      organizationId,
+      title,
+      description,
+      ownerName,
+      dueDate
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "El título del seguimiento es obligatorio." });
+    }
+
+    if (organizationId) {
+      const organization = await prisma.organization.findUnique({
+        where: { id: organizationId }
+      });
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organización no encontrada." });
+      }
+    }
+
+    const task = await prisma.task.create({
+      data: {
+        organizationId: organizationId || null,
+        title,
+        description: description || null,
+        ownerName: ownerName || null,
+        dueDate: dueDate ? new Date(dueDate) : null
+      },
+      include: { organization: true }
+    });
+
+    if (organizationId) {
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          nextAction: title,
+          ...(dueDate ? { nextActionDate: new Date(dueDate) } : {})
+        }
+      });
+    }
+
+    res.status(201).json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo crear el seguimiento." });
+  }
+});
+
+app.put("/api/tasks/:id", async (req, res) => {
+  try {
+    const existing = await prisma.task.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Seguimiento no encontrado." });
+    }
+
+    const {
+      organizationId,
+      title,
+      description,
+      ownerName,
+      dueDate,
+      completed
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "El título del seguimiento es obligatorio." });
+    }
+
+    const task = await prisma.task.update({
+      where: { id: req.params.id },
+      data: {
+        organizationId: organizationId || null,
+        title,
+        description: description || null,
+        ownerName: ownerName || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        completed: Boolean(completed)
+      },
+      include: { organization: true }
+    });
+
+    if (organizationId && !completed) {
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          nextAction: title,
+          ...(dueDate ? { nextActionDate: new Date(dueDate) } : {})
+        }
+      });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo actualizar el seguimiento." });
+  }
+});
+
+app.patch("/api/tasks/:id/toggle", async (req, res) => {
+  try {
+    const existing = await prisma.task.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Seguimiento no encontrado." });
+    }
+
+    const task = await prisma.task.update({
+      where: { id: req.params.id },
+      data: { completed: !existing.completed },
+      include: { organization: true }
+    });
+
+    res.json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo cambiar el estado del seguimiento." });
+  }
+});
+
+app.delete("/api/tasks/:id", async (req, res) => {
+  try {
+    await prisma.task.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar el seguimiento." });
+  }
+});
+
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

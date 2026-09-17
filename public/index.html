@@ -51,6 +51,18 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
 @media(max-width:760px){.match-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="tasks-extra">
+.task-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.task-toolbar button.active{background:var(--blue);color:#fff}
+.task-row.overdue{background:#fff7f6}
+.task-status{font-size:12px;font-weight:700}
+.task-status.overdue{color:var(--red)}
+.task-status.pending{color:var(--brown)}
+.task-status.completed{color:var(--green)}
+.task-actions{display:flex;gap:6px;flex-wrap:wrap}
+</style>
+
 </head>
 <body>
 <div class="layout">
@@ -63,7 +75,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
     <a data-route="contacts">Contactos</a>
     <a data-route="pipeline">Pipeline</a>
     <a data-route="matches">Matches</a>
-    <a>Seguimientos</a>
+    <a data-route="tasks">Seguimientos</a>
   </nav>
 </aside>
 <main id="app"></main>
@@ -312,6 +324,50 @@ tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafafa}
       <div class="actions">
         <button type="button" class="secondary" id="closeMatchModal">Cancelar</button>
         <button type="submit" class="primary">Guardar match</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div class="modal" id="taskModal">
+  <div class="modal-box">
+    <h2 id="taskModalTitle">Nuevo seguimiento</h2>
+    <form id="taskForm">
+      <input type="hidden" name="id" />
+      <div class="grid">
+        <div class="full">
+          <label>Organización</label>
+          <select name="organizationId"></select>
+        </div>
+        <div class="full">
+          <label>Título / próxima acción *</label>
+          <input name="title" required placeholder="Ej. Enviar propuesta comercial" />
+        </div>
+        <div class="full">
+          <label>Descripción</label>
+          <textarea name="description"></textarea>
+        </div>
+        <div>
+          <label>Responsable</label>
+          <input name="ownerName" placeholder="Ej. Evelyn / Kevin" />
+        </div>
+        <div>
+          <label>Fecha límite</label>
+          <input type="date" name="dueDate" />
+        </div>
+        <div>
+          <label>Estado</label>
+          <select name="completed">
+            <option value="false">Pendiente</option>
+            <option value="true">Completado</option>
+          </select>
+        </div>
+      </div>
+      <div id="taskNotice" class="notice"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="closeTaskModal">Cancelar</button>
+        <button type="submit" class="primary">Guardar seguimiento</button>
       </div>
     </form>
   </div>
@@ -841,6 +897,169 @@ async function matchesPage(){
 }
 
 
+
+const taskModal = document.getElementById("taskModal");
+const taskForm = document.getElementById("taskForm");
+const taskNotice = document.getElementById("taskNotice");
+let taskOrgCache = [];
+
+async function loadTaskOrganizations(){
+  const res = await fetch("/api/organizations");
+  taskOrgCache = await res.json();
+  taskForm.elements.organizationId.innerHTML =
+    `<option value="">Sin organización específica</option>` +
+    taskOrgCache.map(o => `<option value="${o.id}">${esc(o.name)} · ${esc(o.country)}</option>`).join("");
+}
+
+async function openTaskCreate(prefillOrganizationId = ""){
+  taskForm.reset();
+  taskForm.elements.id.value = "";
+  taskForm.elements.completed.value = "false";
+  document.getElementById("taskModalTitle").textContent = "Nuevo seguimiento";
+  taskNotice.textContent = "";
+  await loadTaskOrganizations();
+  if (prefillOrganizationId) taskForm.elements.organizationId.value = prefillOrganizationId;
+  taskModal.classList.add("open");
+}
+
+async function openTaskEdit(t){
+  taskForm.reset();
+  document.getElementById("taskModalTitle").textContent = "Editar seguimiento";
+  taskNotice.textContent = "";
+  await loadTaskOrganizations();
+
+  taskForm.elements.id.value = t.id;
+  taskForm.elements.organizationId.value = t.organizationId || "";
+  taskForm.elements.title.value = t.title || "";
+  taskForm.elements.description.value = t.description || "";
+  taskForm.elements.ownerName.value = t.ownerName || "";
+  taskForm.elements.dueDate.value = t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : "";
+  taskForm.elements.completed.value = t.completed ? "true" : "false";
+
+  taskModal.classList.add("open");
+}
+
+document.getElementById("closeTaskModal").onclick = () => taskModal.classList.remove("open");
+
+taskForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fd = new FormData(taskForm);
+  const data = Object.fromEntries(fd.entries());
+  const id = data.id;
+  delete data.id;
+  data.completed = data.completed === "true";
+
+  taskNotice.textContent = "Guardando...";
+
+  const res = await fetch(id ? `/api/tasks/${id}` : "/api/tasks", {
+    method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const out = await res.json();
+
+  if (!res.ok) {
+    taskNotice.textContent = out.error || "Ocurrió un error.";
+    return;
+  }
+
+  taskNotice.textContent = id ? "Seguimiento actualizado." : "Seguimiento creado.";
+  setTimeout(() => {
+    taskModal.classList.remove("open");
+    route();
+  }, 300);
+});
+
+async function toggleTask(id){
+  const res = await fetch(`/api/tasks/${id}/toggle`, { method: "PATCH" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo cambiar el estado.");
+  route();
+}
+
+async function deleteTask(id){
+  if (!confirm("¿Eliminar este seguimiento?")) return;
+  const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+  const out = await res.json();
+  if (!res.ok) return alert(out.error || "No se pudo eliminar.");
+  route();
+}
+
+function taskStatus(t){
+  if (t.completed) return { label:"Completado", cls:"completed" };
+  if (t.dueDate && new Date(t.dueDate) < new Date()) return { label:"Vencido", cls:"overdue" };
+  return { label:"Pendiente", cls:"pending" };
+}
+
+async function tasksPage(status = ""){
+  setActive("tasks");
+
+  app.innerHTML = `
+    <div class="top">
+      <div>
+        <h1>Seguimientos</h1>
+        <small>Próximas acciones, responsables y vencimientos</small>
+      </div>
+      <button class="primary" onclick="openTaskCreate()">+ Nuevo seguimiento</button>
+    </div>
+    <section class="panel">
+      <div class="task-toolbar">
+        <button class="secondary ${status===""?"active":""}" onclick="tasksPage('')">Todos</button>
+        <button class="secondary ${status==="pending"?"active":""}" onclick="tasksPage('pending')">Pendientes</button>
+        <button class="secondary ${status==="overdue"?"active":""}" onclick="tasksPage('overdue')">Vencidos</button>
+        <button class="secondary ${status==="upcoming"?"active":""}" onclick="tasksPage('upcoming')">Próximos</button>
+        <button class="secondary ${status==="completed"?"active":""}" onclick="tasksPage('completed')">Completados</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Seguimiento</th>
+            <th>Organización</th>
+            <th>Responsable</th>
+            <th>Fecha límite</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="taskRows"><tr><td colspan="6">Cargando...</td></tr></tbody>
+      </table>
+    </section>`;
+
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch("/api/tasks" + query);
+  const items = await res.json();
+  const tbody = document.getElementById("taskRows");
+
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay seguimientos en esta vista.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = items.map(t => {
+    const s = taskStatus(t);
+    return `
+      <tr class="task-row ${s.cls}">
+        <td>
+          <strong>${esc(t.title)}</strong>
+          ${t.description ? `<br><span class="muted">${esc(t.description)}</span>` : ""}
+        </td>
+        <td>${t.organization ? `<span class="link" style="cursor:pointer" onclick="goto('organization/${t.organizationId}')">${esc(t.organization.name)}</span>` : "—"}</td>
+        <td>${esc(t.ownerName || "—")}</td>
+        <td>${fmtDate(t.dueDate)}</td>
+        <td><span class="task-status ${s.cls}">${s.label}</span></td>
+        <td>
+          <div class="task-actions">
+            <button class="secondary" onclick='openTaskEdit(${JSON.stringify(t)})'>Editar</button>
+            <button class="secondary" onclick="toggleTask('${t.id}')">${t.completed ? "Reabrir" : "Completar"}</button>
+            <button class="secondary" onclick="deleteTask('${t.id}')">Eliminar</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+
 async function dashboard(){
   setActive("dashboard");
   app.innerHTML=`<div class="top"><div><h1>Dashboard</h1><small>Resumen comercial de Mishki Yaku Collective</small></div><button class="primary" onclick="openCreate()">+ Registrar organización</button></div>
@@ -990,7 +1209,25 @@ async function organizationProfile(id){
             </span>
           </div>`).join("") : `<div class="empty">Sin matches.</div>`}
       `)}
-      ${section("Seguimientos",tasks.length?tasks.map(t=>`<div class="kv"><strong>${esc(t.title)}</strong><span>${fmtDate(t.dueDate)}${t.completed?" · Completado":""}</span></div>`).join(""):`<div class="empty">Sin seguimientos.</div>`)}
+      ${section("Seguimientos",`
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="primary" onclick="openTaskCreate('${o.id}')">+ Añadir seguimiento</button>
+        </div>
+        ${tasks.length ? tasks.map(t=>{
+          const s = taskStatus(t);
+          return `
+            <div class="kv">
+              <strong>${esc(t.title)}</strong>
+              <span>
+                ${fmtDate(t.dueDate)} · <span class="task-status ${s.cls}">${s.label}</span>
+                ${t.ownerName ? `<br><span class="muted">Responsable: ${esc(t.ownerName)}</span>` : ""}
+                <br>
+                <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick='openTaskEdit(${JSON.stringify(t)})'>Editar</button>
+                <button class="secondary" style="margin-top:7px;padding:7px 10px" onclick="toggleTask('${t.id}')">${t.completed ? "Reabrir" : "Completar"}</button>
+              </span>
+            </div>`;
+        }).join("") : `<div class="empty">Sin seguimientos.</div>`}
+      `)}
     </div>
   </div>`;
   document.getElementById("editBtn").onclick=()=>openEdit(o);
@@ -1003,6 +1240,7 @@ async function route(){
   if(h==="contacts") return contactsPage();
   if(h==="pipeline") return pipelinePage();
   if(h==="matches") return matchesPage();
+  if(h==="tasks") return tasksPage();
   if(h.startsWith("organization/")) return organizationProfile(h.split("/")[1]);
   return dashboard();
 }
